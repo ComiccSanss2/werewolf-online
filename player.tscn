@@ -290,7 +290,7 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bwjto"]
-size = Vector2(13.5, 10)
+size = Vector2(11.5, 7)
 
 [node name="Player" type="CharacterBody2D"]
 collision_layer = 2
@@ -304,7 +304,8 @@ animation = &"idle-down"
 frame_progress = 0.10704492
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(-0.25, -2)
+z_index = 16
+position = Vector2(-0.25, 0.5)
 shape = SubResource("RectangleShape2D_bwjto")
 
 [node name="Camera2D" type="Camera2D" parent="."]
