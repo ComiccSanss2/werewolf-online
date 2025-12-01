@@ -1,15 +1,21 @@
 extends CharacterBody2D
 
-@export var speed := 200
+@export var speed := 75
 @onready var anim = $AnimatedSprite2D
 
-var last_direction := Vector2.DOWN  # pour choisir l'idle correct
+var last_direction := Vector2.DOWN
+
+func _enter_tree():
+	if is_multiplayer_authority():
+		$Camera2D.enabled = true
 
 func _ready():
 	if is_multiplayer_authority():
-		modulate = Color(0.85, 1, 0.85)  # local = vert clair
+		$Camera2D.enabled = true
 	else:
-		modulate = Color(1, 0.85, 0.85)  # autres = rouge clair
+		$Camera2D.enabled = false
+
+
 
 
 func _physics_process(delta):
@@ -29,7 +35,6 @@ func _physics_process(delta):
 
 	input_dir = input_dir.normalized()
 
-	# sauvegarde la dernière direction (pour idle)
 	if input_dir != Vector2.ZERO:
 		last_direction = input_dir
 
@@ -38,17 +43,11 @@ func _physics_process(delta):
 
 	_update_animation(input_dir)
 
-	# Sync réseau
 	rpc("sync_position", global_position)
 
 
-# ===========================
-#     ANIMATIONS
-# ===========================
-
 func _update_animation(dir: Vector2):
 	if dir == Vector2.ZERO:
-		# IDLE
 		if abs(last_direction.x) > abs(last_direction.y):
 			anim.play("idle-left-right")
 			anim.flip_h = last_direction.x < 0
@@ -58,7 +57,6 @@ func _update_animation(dir: Vector2):
 			else:
 				anim.play("idle-up")
 	else:
-		# RUN
 		if abs(dir.x) > abs(dir.y):
 			anim.play("run-left-right")
 			anim.flip_h = dir.x < 0
@@ -68,10 +66,6 @@ func _update_animation(dir: Vector2):
 			else:
 				anim.play("run-up")
 
-
-# ===========================
-#     NETWORK SYNC
-# ===========================
 
 @rpc("any_peer", "unreliable")
 func sync_position(pos: Vector2):
