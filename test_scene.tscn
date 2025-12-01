@@ -34,8 +34,19 @@ sources/1 = SubResource("TileSetAtlasSource_coq8p")
 [node name="TestScene" type="Node2D"]
 script = ExtResource("1_uhqqe")
 
-[node name="SpawnPoint" type="Marker2D" parent="."]
+[node name="SpawnPoints" type="Node2D" parent="."]
 position = Vector2(18, -88)
+
+[node name="Spawn1" type="Marker2D" parent="SpawnPoints"]
+
+[node name="Spawn2" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(251, 0)
+
+[node name="Spawn3" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(0, 167)
+
+[node name="Spawn4" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(250, 166)
 
 [node name="TileMap" type="TileMap" parent="."]
 tile_set = SubResource("TileSet_coq8p")
