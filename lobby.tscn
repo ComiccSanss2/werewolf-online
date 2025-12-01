@@ -1,0 +1,42 @@
+[gd_scene load_steps=2 format=3 uid="uid://brnljyynm773q"]
+
+[ext_resource type="Script" uid="uid://dfiypymj4ct8q" path="res://lobby.gd" id="1_ll2xe"]
+
+[node name="Lobby" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_ll2xe")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="LabelTitle" type="Label" parent="CanvasLayer"]
+offset_left = 406.0
+offset_top = 52.0
+offset_right = 744.0
+offset_bottom = 101.0
+text = "LOBBY"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CanvasLayer"]
+offset_left = 449.0
+offset_top = 120.0
+offset_right = 691.0
+offset_bottom = 322.0
+
+[node name="ButtonStart" type="Button" parent="CanvasLayer"]
+offset_left = 447.0
+offset_top = 453.0
+offset_right = 705.0
+offset_bottom = 526.0
+text = "START"
+
+[node name="LabelStatus" type="Label" parent="CanvasLayer"]
+offset_left = 384.0
+offset_top = 376.0
+offset_right = 773.0
+offset_bottom = 435.0
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="pressed" from="CanvasLayer/ButtonStart" to="." method="_on_ButtonStart_pressed"]

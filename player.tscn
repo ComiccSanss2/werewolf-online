@@ -309,3 +309,10 @@ shape = SubResource("RectangleShape2D_bwjto")
 
 [node name="Camera2D" type="Camera2D" parent="."]
 zoom = Vector2(5, 5)
+
+[node name="NameLabel" type="Label" parent="."]
+offset_left = -6.0
+offset_top = -12.999999
+offset_right = 48.0
+offset_bottom = 10.000001
+scale = Vector2(0.2, 0.2)
