@@ -16,7 +16,6 @@ func _on_player_connected(peer_id):
 	spawn_player(peer_id)
 
 func _on_player_disconnected(peer_id):
-	# Supprime le joueur qui s'est déconnecté
 	if has_node(str(peer_id)):
 		get_node(str(peer_id)).queue_free()
 
