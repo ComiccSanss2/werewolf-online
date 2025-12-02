@@ -157,9 +157,37 @@ func _on_ButtonStart_pressed():
 		return
 
 	print("HOST: starting game")
-
+	
+	# Attribuer les rôles avant de démarrer le jeu
+	var player_ids = []
+	player_ids.append(mp.get_unique_id())  # Host
+	for peer_id in mp.get_peers():
+		player_ids.append(peer_id)
+	
+	var result = RoleManager.assign_roles(player_ids)
+	if not result.success:
+		status_label.text = result.message
+		return
+	
+	print("LOBBY: Rôles attribués - %d loups, %d villageois" % [result.num_wolves, result.num_villagers])
+	
+	# Envoyer les rôles à tous les joueurs
+	for peer_id in player_ids:
+		var role = RoleManager.get_player_role(peer_id)
+		if role:
+			rpc_id(peer_id, "receive_role", role.role_name, role.description, role.team)
+	
 	rpc("start_game_remote")
 	_start_game()
+
+
+@rpc("any_peer", "reliable")
+func receive_role(role_name: String, description: String, team: String):
+	print("CLIENT: Received role - %s (team: %s)" % [role_name, team])
+	# Stocker temporairement le rôle dans Network pour le récupérer dans la scène de jeu
+	Network.my_role_name = role_name
+	Network.my_role_description = description
+	Network.my_role_team = team
 
 
 @rpc("any_peer", "reliable")

@@ -2,7 +2,7 @@ class_name Villageois
 extends Role
 
 # Rôle : Villageois
-# Rôle de base, sans pouvoir spécial
+# Le rôle de base, sans pouvoir spécial
 
 func _init():
 	role_name = "Villageois"
@@ -31,11 +31,4 @@ func night_action() -> Dictionary:
 		"success": true,
 		"action": "sleep",
 		"message": "Vous dormez paisiblement..."
-	}
-
-# Le villageois n'a pas de pouvoir spécial
-func special_power(target_id: int = -1) -> Dictionary:
-	return {
-		"success": false,
-		"message": "Les villageois n'ont pas de pouvoir spécial."
 	}
