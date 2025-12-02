@@ -17,7 +17,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-Network="*res://Network.gd"
+Network="*res://autoload/Network.gd"
 
 [rendering]
 

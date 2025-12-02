@@ -168,7 +168,7 @@ func start_game_remote():
 
 
 func _start_game():
-	get_tree().change_scene_to_file("res://test_scene.tscn")
+	get_tree().change_scene_to_file("res://scenes/gameplay/test_scene.tscn")
 
 
 

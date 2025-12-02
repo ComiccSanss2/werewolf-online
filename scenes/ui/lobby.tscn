@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://brnljyynm773q"]
 
-[ext_resource type="Script" uid="uid://dfiypymj4ct8q" path="res://lobby.gd" id="1_ll2xe"]
+[ext_resource type="Script" uid="uid://dfiypymj4ct8q" path="res://scenes/ui/lobby.gd" id="1_ll2xe"]
 [ext_resource type="Texture2D" uid="uid://dl147nj717l6d" path="res://assets/LOBBY.png" id="2_xrgmn"]
 
 [node name="Lobby" type="Control"]
