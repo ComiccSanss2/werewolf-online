@@ -436,10 +436,10 @@ sources/11 = SubResource("TileSetAtlasSource_k6its")
 [node name="TestScene" type="Node2D"]
 script = ExtResource("1_uhqqe")
 
-[node name="Players" type="Node2D" parent="."]
+[node name="Players" type="Node" parent="."]
 
 [node name="MultiplayerSpawner" type="MultiplayerSpawner" parent="."]
-spawn_path = NodePath("Players")
+spawn_path = NodePath("../Players")
 
 [node name="SpawnPoints" type="Node2D" parent="."]
 position = Vector2(18, -88)
@@ -503,7 +503,7 @@ texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D5" type="PointLight2D" parent="."]
-position = Vector2(553, -33)
+position = Vector2(554, -64)
 energy = 1.5
 range_z_min = -1
 range_z_max = 1
@@ -546,3 +546,6 @@ texture_scale = 0.3
 color = Color(0, 0, 0, 1)
 energy = 0.5
 blend_mode = 2
+
+[connection signal="despawned" from="MultiplayerSpawner" to="." method="_despawn_player"]
+[connection signal="spawned" from="MultiplayerSpawner" to="." method="_spawn_player"]
