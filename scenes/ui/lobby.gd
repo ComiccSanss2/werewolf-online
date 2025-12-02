@@ -172,10 +172,17 @@ func _on_ButtonStart_pressed():
 	print("LOBBY: Rôles attribués - %d loups, %d villageois" % [result.num_wolves, result.num_villagers])
 	
 	# Envoyer les rôles à tous les joueurs
+	var my_id = mp.get_unique_id()
 	for peer_id in player_ids:
 		var role = RoleManager.get_player_role(peer_id)
 		if role:
-			rpc_id(peer_id, "receive_role", role.role_name, role.description, role.team)
+			print("LOBBY: Attribution à joueur %d -> %s" % [peer_id, role.role_name])
+			if peer_id == my_id:
+				# Pour l'hôte, appeler directement la fonction
+				receive_role(role.role_name, role.description, role.team)
+			else:
+				# Pour les autres, utiliser RPC
+				rpc_id(peer_id, "receive_role", role.role_name, role.description, role.team)
 	
 	rpc("start_game_remote")
 	_start_game()
@@ -183,7 +190,10 @@ func _on_ButtonStart_pressed():
 
 @rpc("any_peer", "reliable")
 func receive_role(role_name: String, description: String, team: String):
-	print("CLIENT: Received role - %s (team: %s)" % [role_name, team])
+	var mp = get_tree().get_multiplayer()
+	var my_id = mp.get_unique_id()
+	print("✓ Joueur %d a reçu son rôle: %s (équipe: %s)" % [my_id, role_name, team])
+	
 	# Stocker temporairement le rôle dans Network pour le récupérer dans la scène de jeu
 	Network.my_role_name = role_name
 	Network.my_role_description = description
