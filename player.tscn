@@ -1,4 +1,4 @@
-[gd_scene load_steps=42 format=3 uid="uid://yscgsx5lmjcl"]
+[gd_scene load_steps=44 format=3 uid="uid://yscgsx5lmjcl"]
 
 [ext_resource type="Script" uid="uid://bok8xx2xd78ek" path="res://player.gd" id="1_4flbx"]
 [ext_resource type="Texture2D" uid="uid://bfydvfgc40asq" path="res://assets/Hana Caraka - Base Character [sample] 2/idle.png" id="2_i3pqv"]
@@ -292,8 +292,12 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bwjto"]
 size = Vector2(11.5, 7)
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_i3pqv"]
+radius = 8.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_i3pqv"]
+
 [node name="Player" type="CharacterBody2D"]
-collision_layer = 2
 collision_mask = 3
 script = ExtResource("1_4flbx")
 
@@ -301,7 +305,6 @@ script = ExtResource("1_4flbx")
 texture_filter = 1
 sprite_frames = SubResource("SpriteFrames_b26j0")
 animation = &"idle-down"
-frame_progress = 0.10704492
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 z_index = 16
@@ -317,3 +320,24 @@ offset_top = -12.999999
 offset_right = 48.0
 offset_bottom = 10.000001
 scale = Vector2(0.2, 0.2)
+
+[node name="AreaDetector" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="AreaDetector"]
+shape = SubResource("CircleShape2D_i3pqv")
+
+[node name="PressSpaceLabel" type="Label" parent="."]
+visible = false
+texture_filter = 1
+offset_left = -13.0
+offset_top = 9.0
+offset_right = 78.0
+offset_bottom = 32.0
+scale = Vector2(0.3, 0.3)
+text = "Press Space"
+label_settings = SubResource("LabelSettings_i3pqv")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="area_entered" from="AreaDetector" to="." method="_on_area_entered"]
+[connection signal="area_exited" from="AreaDetector" to="." method="_on_area_exited"]

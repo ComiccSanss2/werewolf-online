@@ -55,10 +55,11 @@ func _on_connected():
 	_add_player(my_id)
 	_update_player_label(my_id, Network.nickname)
 
-	# send nickname to host (ID = 1)
+	# Send nickname to host (ID = 1)
 	rpc_id(1, "register_name_request", Network.nickname)
 
 	status_label.text = "Connected. Waiting for players..."
+
 
 
 ###################################################
@@ -75,10 +76,10 @@ func register_name_request(name: String):
 
 		print("SERVER REGISTER:", sender_id, name)
 
-		# broadcast the client's name to all players
+		# Broadcast to all clients
 		rpc("register_name_broadcast", sender_id, name)
 
-		# also send host name to the newly connected client
+		# Also send host name to this newly connected client
 		var host_id = mp.get_unique_id()
 		rpc_id(sender_id, "register_name_broadcast", host_id, Network.player_names[host_id])
 
@@ -105,7 +106,7 @@ func register_name_broadcast(peer_id: int, name: String):
 
 func _on_player_connected(peer_id):
 	print("PLAYER CONNECTED:", peer_id)
-	_add_player(peer_id) 
+	_add_player(peer_id)
 
 
 
@@ -122,7 +123,7 @@ func _on_player_disconnected(peer_id):
 
 
 ###################################################
-# UI FUNCTIONS — FINAL FIX
+# UI FUNCTIONS
 ###################################################
 
 func _add_player(peer_id):
@@ -132,7 +133,6 @@ func _add_player(peer_id):
 		label.text = "Loading..."
 		players_list.add_child(label)
 
-	# Update immediately with fallback
 	var pseudo = Network.player_names.get(peer_id, "Loading...")
 	players_list.get_node(str(peer_id)).text = pseudo + " (" + str(peer_id) + ")"
 
@@ -148,7 +148,7 @@ func _update_player_label(peer_id, name):
 
 
 ###################################################
-# START GAME
+# START GAME (FIXED)
 ###################################################
 
 func _on_ButtonStart_pressed():
@@ -158,10 +158,15 @@ func _on_ButtonStart_pressed():
 
 	print("HOST: starting game")
 
-	rpc("start_game_remote")
+	# 🔥 ENVOYER UNIQUEMENT AUX CLIENTS
+	for peer_id in mp.get_peers():
+		rpc_id(peer_id, "start_game_remote")
+
+	# 🔥 LE HOST LANCE LA PARTIE UNE SEULE FOIS
 	_start_game()
 
 
+# 🔥 Le client reçoit ceci et démarre la partie
 @rpc("any_peer", "reliable")
 func start_game_remote():
 	_start_game()

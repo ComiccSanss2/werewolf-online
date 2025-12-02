@@ -6,29 +6,32 @@ var PlayerScene = preload("res://player.tscn")
 func _ready():
 	var mp = get_tree().get_multiplayer()
 
-	# connecter signaux
+	# connecter signaux réseau
 	mp.peer_connected.connect(_on_player_connected)
 	mp.peer_disconnected.connect(_on_player_disconnected)
 
-	# spawn du joueur local
+	# SPWAN DU PLAYER LOCAL (host ou client)
 	spawn_player(mp.get_unique_id())
 
-	# spawn des joueurs déjà connectés
+	# Spawn des joueurs déjà connectés (si host)
 	for peer_id in mp.get_peers():
 		if peer_id != mp.get_unique_id():
 			spawn_player(peer_id)
 
 
+
+#############################################################
+#                     PLAYER CONNECTÉ
+#############################################################
+
 func _on_player_connected(peer_id):
 	var mp = get_tree().get_multiplayer()
 	var local_id = mp.get_unique_id()
 
-	# Ne pas spawn soi-même
 	if peer_id == local_id:
 		print("IGNORED self connect:", peer_id)
 		return
 
-	# Si déjà spawn → on ignore
 	if has_node(str(peer_id)):
 		print("Player already exists:", peer_id)
 		return
@@ -37,6 +40,11 @@ func _on_player_connected(peer_id):
 	spawn_player(peer_id)
 
 
+
+#############################################################
+#                     PLAYER DÉCONNECTÉ
+#############################################################
+
 func _on_player_disconnected(peer_id):
 	print("DISCONNECTED:", peer_id)
 
@@ -44,9 +52,10 @@ func _on_player_disconnected(peer_id):
 		get_node(str(peer_id)).queue_free()
 
 
-#####################################
-#          SPAWN SYSTEM             #
-#####################################
+
+#############################################################
+#                  SPAWN SYSTEM (FIXÉ)
+#############################################################
 
 func spawn_player(peer_id):
 	print("SPAWN PLAYER:", peer_id)
@@ -54,8 +63,19 @@ func spawn_player(peer_id):
 	var p = PlayerScene.instantiate()
 	p.name = str(peer_id)
 
-	# Autorité réseau
+	# Récupérer le multiplayer
+	var mp = get_tree().get_multiplayer()
+	var local_id = mp.get_unique_id()
+
+	# FIX HOST/CLIENT : appliquer autorité correcte
+	# Le player dont le nom == peer_id = l’autorité du peer_id
 	p.set_multiplayer_authority(peer_id)
+
+	# DEBUG ESSENTIEL : montrez quelle instance est locale
+	if peer_id == local_id:
+		print("[AUTHORITY OK] This Player is LOCAL for peer:", peer_id)
+	else:
+		print("[REMOTE] This Player belongs to peer:", peer_id)
 
 	# Ajouter au monde
 	add_child(p)
@@ -65,7 +85,7 @@ func spawn_player(peer_id):
 	var spawn = spawns[randi() % spawns.size()]
 	p.global_position = spawn.global_position
 
-	# ASSIGNER LE PSEUDO AU LABEL AU-DESSUS DU JOUEUR
+	# Assigner le pseudo
 	if p.has_node("NameLabel"):
 		p.get_node("NameLabel").text = Network.player_names.get(peer_id, "Player")
 
