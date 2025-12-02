@@ -35,8 +35,12 @@ func _ready():
 	press_label.visible = false
 	saved_speed = speed
 
+	network_pos = global_position
+
 	detector.area_entered.connect(_on_area_entered)
 	detector.area_exited.connect(_on_area_exited)
+
+	_setup_replication()
 
 
 #############################################################
@@ -70,12 +74,12 @@ func _physics_process(delta):
 
 		_update_animation(input_dir)
 
-		rpc("sync_direction", input_dir, last_direction)
-		rpc("sync_position", global_position)
+		network_pos = global_position
 
 	else:
+		var dir_to_target := network_pos - global_position
 		global_position = global_position.lerp(network_pos, 0.25)
-
+		_update_animation(dir_to_target)
 
 
 #############################################################
@@ -101,17 +105,18 @@ func _update_animation(dir):
 #                  SYNC MULTI
 #############################################################
 
-@rpc("any_peer", "unreliable")
-func sync_position(pos):
-	if !is_multiplayer_authority():
-		network_pos = pos
+func _setup_replication():
+	var sync := $MultiplayerSynchronizer
 
-@rpc("any_peer", "unreliable")
-func sync_direction(dir, last_dir):
-	if !is_multiplayer_authority():
-		last_direction = last_dir
-		_update_animation(dir)
+	if sync == null:
+		return
 
+	var config := SceneReplicationConfig.new()
+	config.add_property("network_pos")
+	config.add_property("last_direction")
+
+	sync.replication_config = config
+	sync.root_path = NodePath(".")
 
 
 #############################################################
@@ -164,7 +169,6 @@ func toggle_chest_state(player_path, chest_path):
 
 		player.speed = player.saved_speed
 		player.global_position = chest.global_position + Vector2(0, 16)
-
 
 
 #############################################################

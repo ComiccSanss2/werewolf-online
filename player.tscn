@@ -321,6 +321,8 @@ offset_right = 48.0
 offset_bottom = 10.000001
 scale = Vector2(0.2, 0.2)
 
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+
 [node name="AreaDetector" type="Area2D" parent="."]
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="AreaDetector"]
