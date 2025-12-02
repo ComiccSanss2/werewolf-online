@@ -1,6 +1,6 @@
-[gd_scene load_steps=42 format=3 uid="uid://enjwjrl6dwwy"]
+[gd_scene load_steps=42 format=3 uid="uid://yscgsx5lmjcl"]
 
-[ext_resource type="Script" path="res://player.gd" id="1_4flbx"]
+[ext_resource type="Script" uid="uid://bok8xx2xd78ek" path="res://scenes/characters/player.gd" id="1_4flbx"]
 [ext_resource type="Texture2D" uid="uid://bfydvfgc40asq" path="res://assets/Hana Caraka - Base Character [sample] 2/idle.png" id="2_i3pqv"]
 [ext_resource type="Texture2D" uid="uid://djtw7b085vyhu" path="res://assets/Hana Caraka - Base Character [sample] 2/walk.png" id="3_hqtel"]
 

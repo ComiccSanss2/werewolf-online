@@ -22,7 +22,7 @@ func _on_HostButton_pressed():
 	get_tree().get_multiplayer().multiplayer_peer = peer
 	print("HOST OK")
 
-	get_tree().change_scene_to_file("res://Lobby.tscn")
+	get_tree().change_scene_to_file("res://scenes/ui/lobby.tscn")
 
 
 ###################################################
@@ -50,4 +50,4 @@ func _on_JoinButton_pressed():
 	get_tree().get_multiplayer().multiplayer_peer = peer
 	print("CLIENT OK")
 
-	get_tree().change_scene_to_file("res://Lobby.tscn")
+	get_tree().change_scene_to_file("res://scenes/ui/lobby.tscn")
