@@ -123,7 +123,7 @@ func _on_player_disconnected(peer_id):
 
 
 ###################################################
-# UI FUNCTIONS
+# UI FUNCTIONS  
 ###################################################
 
 func _add_player(peer_id):
@@ -158,22 +158,22 @@ func _on_ButtonStart_pressed():
 
 	print("HOST: starting game")
 
-	# 🔥 ENVOYER UNIQUEMENT AUX CLIENTS
+	# envoyer uniquement aux clients
 	for peer_id in mp.get_peers():
 		rpc_id(peer_id, "start_game_remote")
 
-	# 🔥 LE HOST LANCE LA PARTIE UNE SEULE FOIS
+	# host charge 1 fois
 	_start_game()
 
 
-# 🔥 Le client reçoit ceci et démarre la partie
-@rpc("any_peer", "reliable")
+@rpc("call_local", "reliable")
 func start_game_remote():
 	_start_game()
 
 
 func _start_game():
 	get_tree().change_scene_to_file("res://test_scene.tscn")
+
 
 
 
