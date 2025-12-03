@@ -1,188 +1,167 @@
 extends CharacterBody2D
 
-#############################################################
-#                  VARIABLES EXISTANTES
-#############################################################
+@export var speed: float = 150.0
+var is_in_chest := false
+var move_dir := Vector2.ZERO
 
-@export var speed := 75
-@onready var anim := $AnimatedSprite2D
-@onready var sprite := $AnimatedSprite2D
-@onready var name_label := $NameLabel
-@onready var collider := $CollisionShape2D
-@onready var detector := $AreaDetector
-@onready var press_label := $PressSpaceLabel
+var last_move_dir: Vector2 = Vector2.DOWN 
+var is_hidden: bool = false 
 
-var last_direction := Vector2.DOWN
-var network_pos := Vector2.ZERO
+@onready var anim: AnimatedSprite2D = $AnimatedSprite2D
+@onready var name_label: Label = $NameLabel
+@onready var camera: Camera2D = $Camera2D
+@onready var chest_area: Area2D = $ChestDetector
+@onready var chest_manager: Node = $"../../TileMap_Interactions" 
+@onready var collision_shape: CollisionShape2D = $CollisionShape2D 
 
-var inside_chest := false
-var can_interact := false
-var current_chest: Area2D = null
-var saved_speed := 75
+func _enter_tree() -> void:
+	pass
+
+func _ready() -> void:
+	# FIX: Evita l'errore all'avvio se la rete non è ancora attiva
+	if not get_tree().get_multiplayer().has_multiplayer_peer():
+		set_process_mode(PROCESS_MODE_DISABLED)
+		return
+		
+	camera.enabled = is_multiplayer_authority()
+	
+	_connect_chest_signals()
+	_update_name()
+	NetworkHandler.lobby_players_updated.connect(_update_name)
+
+func _connect_chest_signals() -> void:
+	chest_area.area_entered.connect(_on_area_entered, 4)
+	chest_area.area_exited.connect(_on_area_exited, 4)
+
+func _update_name() -> void:
+	if name_label:
+		var id := get_multiplayer_authority()
+		var player_data = NetworkHandler.players.get(id)
+		if player_data and player_data.has("name"):
+			name_label.text = player_data["name"]
+		else:
+			name_label.text = "Player %s" % id
 
 
-#############################################################
-#                  CAMERA MULTI
-#############################################################
+func _process(delta: float) -> void:
+	if not is_multiplayer_authority(): return
 
-func _enter_tree():
-	if is_multiplayer_authority():
-		$Camera2D.enabled = true
-		$Camera2D.make_current()
+	# 1. GESTIONE INTERAZIONE (Nascondi/Rivela/Apri cassa)
+	if Input.is_action_just_pressed("ui_accept"):
+		_try_hide_or_open_chest()
 
-
-func _ready():
-	press_label.visible = false
-	saved_speed = speed
-
-	network_pos = global_position
-
-	detector.area_entered.connect(_on_area_entered)
-	detector.area_exited.connect(_on_area_exited)
-
-	_setup_replication()
-
-
-#############################################################
-#                  MOUVEMENT
-#############################################################
-
-func _physics_process(delta):
-	if inside_chest:
+	# 2. BLOCCO TOTALE se il giocatore è nascosto
+	if is_hidden:
 		velocity = Vector2.ZERO
+		move_and_slide() 
+		return 
+	
+	# 3. CALCOLO INPUT MOVIMENTO
+	var iv = Vector2(
+		Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left"),
+		Input.get_action_strength("ui_down") - Input.get_action_strength("ui_up")
+	)
+
+	move_dir = iv.normalized()
+	
+	if move_dir != Vector2.ZERO:
+		last_move_dir = move_dir
+
+	# 4. LOGICA DI BLOCCO/MOVIMENTO
+	if is_in_chest and move_dir == Vector2.ZERO:
+		velocity = Vector2.ZERO
+	else:
+		velocity = move_dir * speed
+		
+	move_and_slide()
+
+	rpc("_net_state", global_position, move_dir, last_move_dir)
+	_update_animation()
+
+# --- LOGICA NASCONDI/RIVELA/APRI (FLUSSO AL SINGLETON) ---
+
+func _try_hide_or_open_chest():
+	if not is_multiplayer_authority(): return
+
+	# 1. Se siamo nascosti, chiediamo di rivelarci (uscire dalla cassa)
+	if is_hidden:
+		NetworkHandler.rpc_id(1, "request_player_hide_state", false) 
 		return
 
-	var input_dir := Vector2.ZERO
+	# 2. Cerchiamo una cassa vicina per nasconderci o aprirla
+	var overlapping_areas = chest_area.get_overlapping_areas()
+	
+	# DEBUG: Controlla se il Client rileva la cassa
+	print("Client (ID:", get_multiplayer_authority(), ") - Input SPACE premuto. Aree rilevate:", overlapping_areas.size())
+	
 
-	if is_multiplayer_authority():
-		if Input.is_action_pressed("ui_up"):
-			input_dir.y -= 1
-		if Input.is_action_pressed("ui_down"):
-			input_dir.y += 1
-		if Input.is_action_pressed("ui_left"):
-			input_dir.x -= 1
-		if Input.is_action_pressed("ui_right"):
-			input_dir.x += 1
+	for area in overlapping_areas:
+		if area.has_meta("chest"):
+			
+			# Nascondi (RPC inviato al NetworkHandler per la sincronizzazione)
+			NetworkHandler.rpc_id(1, "request_player_hide_state", true) 
+			return
+			
+			# Logica per l'apertura della cassa (se la vuoi riattivare con un altro input)
+			# var chest_pos = area.position
+			# if chest_manager:
+			#     chest_manager.rpc_id(1, "request_open_chest", chest_pos)
+			
+			# return 
 
-		input_dir = input_dir.normalized()
+# --- RPC DI SINCRONIZZAZIONE VISIVA (Ricevuto dal NetworkHandler) ---
 
-		if input_dir != Vector2.ZERO:
-			last_direction = input_dir
-
-		velocity = input_dir * speed
-		move_and_slide()
-
-		_update_animation(input_dir)
-
-		network_pos = global_position
-
+@rpc("any_peer", "call_local", "unreliable")
+func sync_player_visual_state(new_state: bool):
+	is_hidden = new_state
+	
+	anim.visible = not new_state
+	name_label.visible = not new_state
+	collision_shape.disabled = new_state
+	
+	if new_state:
+		anim.stop()
 	else:
-		var dir_to_target := network_pos - global_position
-		global_position = global_position.lerp(network_pos, 0.25)
-		_update_animation(dir_to_target)
+		_update_animation()
 
 
-#############################################################
-#                  ANIMATIONS
-#############################################################
+# --- RPC E ANIMAZIONE STANDARD ---
 
-func _update_animation(dir):
-	if dir == Vector2.ZERO:
-		if abs(last_direction.x) > abs(last_direction.y):
-			anim.play("idle-left-right")
-			anim.flip_h = last_direction.x < 0
-		else:
-			anim.play("idle-down" if last_direction.y > 0 else "idle-up")
-	else:
-		if abs(dir.x) > abs(dir.y):
-			anim.play("run-left-right")
-			anim.flip_h = dir.x < 0
-		else:
-			anim.play("run-down" if dir.y > 0 else "run-up")
+@rpc("any_peer", "call_local", "unreliable")
+func _net_state(pos: Vector2, dir: Vector2, last_dir: Vector2) -> void:
+	if is_multiplayer_authority(): return
+	global_position = pos
+	move_dir = dir
+	last_move_dir = last_dir
+	
+	if not is_hidden: 
+		_update_animation()
 
-
-#############################################################
-#                  SYNC MULTI
-#############################################################
-
-func _setup_replication():
-	var sync := $MultiplayerSynchronizer
-
-	if sync == null:
+func _update_animation() -> void:
+	var current_dir = move_dir
+	
+	if current_dir == Vector2.ZERO:
+		current_dir = last_move_dir
+		
+		if current_dir.y > 0: anim.play("idle-down")
+		elif current_dir.y < 0: anim.play("idle-up")
+		else: anim.play("idle-left-right")
+		
+		anim.flip_h = current_dir.x < 0
 		return
+	
+	# Animazioni di corsa
+	if current_dir.y > 0: anim.play("run-down")
+	elif current_dir.y < 0: anim.play("run-up")
+	else: anim.play("run-left-right")
+	anim.flip_h = current_dir.x < 0
 
-	var config := SceneReplicationConfig.new()
-	config.add_property("network_pos")
-	config.add_property("last_direction")
+# --- SEGNALI AREA ---
 
-	sync.replication_config = config
-	sync.root_path = NodePath(".")
+func _on_area_entered(a: Area2D) -> void:
+	if is_multiplayer_authority() and a.has_meta("chest"):
+		is_in_chest = true
 
-
-#############################################################
-#                INTERACTION AVEC COFFRE
-#############################################################
-
-func _process(delta):
-	var local_id = get_tree().get_multiplayer().get_unique_id()
-	var my_id = name.to_int()
-
-	if my_id == local_id and can_interact and Input.is_action_just_pressed("interact"):
-		rpc_id(1, "request_toggle_chest", get_path(), current_chest.get_path())
-
-
-@rpc("any_peer", "reliable")
-func request_toggle_chest(player_path, chest_path):
-	if get_tree().get_multiplayer().is_server():
-		rpc("toggle_chest_state", player_path, chest_path)
-
-
-@rpc("any_peer", "reliable")
-func toggle_chest_state(player_path, chest_path):
-	var player = get_node(player_path)
-	var chest = get_node(chest_path)
-
-	var occupied = chest.get_meta("occupied")
-
-	# entrer
-	if !occupied and !player.inside_chest:
-		chest.set_meta("occupied", true)
-		player.inside_chest = true
-
-		player.sprite.visible = false
-		player.name_label.visible = false
-		player.collider.disabled = true
-
-		player.speed = 0
-		player.velocity = Vector2.ZERO
-
-		player.global_position = chest.global_position
-
-	# sortir
-	elif occupied and player.inside_chest:
-		chest.set_meta("occupied", false)
-		player.inside_chest = false
-
-		player.sprite.visible = true
-		player.name_label.visible = true
-		player.collider.disabled = false
-
-		player.speed = player.saved_speed
-		player.global_position = chest.global_position + Vector2(0, 16)
-
-
-#############################################################
-#                     DÉTECTION DES ZONES
-#############################################################
-
-func _on_area_entered(area):
-	if area.has_meta("chest") and !inside_chest:
-		current_chest = area
-		can_interact = true
-		press_label.visible = true
-
-func _on_area_exited(area):
-	if area == current_chest:
-		current_chest = null
-		can_interact = false
-		press_label.visible = false
+func _on_area_exited(a: Area2D) -> void:
+	if is_multiplayer_authority() and a.has_meta("chest"):
+		is_in_chest = false

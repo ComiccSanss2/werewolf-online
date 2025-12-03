@@ -321,11 +321,9 @@ offset_right = 48.0
 offset_bottom = 10.000001
 scale = Vector2(0.2, 0.2)
 
-[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+[node name="ChestDetector" type="Area2D" parent="."]
 
-[node name="AreaDetector" type="Area2D" parent="."]
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="AreaDetector"]
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ChestDetector"]
 shape = SubResource("CircleShape2D_i3pqv")
 
 [node name="PressSpaceLabel" type="Label" parent="."]
@@ -340,6 +338,3 @@ text = "Press Space"
 label_settings = SubResource("LabelSettings_i3pqv")
 horizontal_alignment = 1
 vertical_alignment = 1
-
-[connection signal="area_entered" from="AreaDetector" to="." method="_on_area_entered"]
-[connection signal="area_exited" from="AreaDetector" to="." method="_on_area_exited"]

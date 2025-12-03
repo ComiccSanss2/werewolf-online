@@ -1,53 +1,43 @@
 extends Control
 
-const PORT := 9000
+@onready var name_input := $NameInput
+@onready var address_input := $AddressInput
+@onready var error_label := $ErrorLabel 
 
-###################################################
-#                   HOST
-###################################################
+func _ready() -> void:
+	get_tree().get_multiplayer().connected_to_server.connect(_on_connected_ok)
+	NetworkHandler.connection_failed_ui.connect(_on_failed)
 
-func _on_HostButton_pressed():
-	print("HOST: creating server")
-
-	var name : String = $NicknameLineEdit.text.strip_edges()
+func _on_HostButton_pressed() -> void:
+	
+	var name: String = name_input.text.strip_edges()
 	if name == "":
 		name = "Player"
-	Network.nickname = name
-
-	var peer := ENetMultiplayerPeer.new()
-	if peer.create_server(PORT) != OK:
-		print("ERROR: cannot create server")
-		return
-
-	get_tree().get_multiplayer().multiplayer_peer = peer
-	print("HOST OK")
-
-	get_tree().change_scene_to_file("res://Lobby.tscn")
+		
+	NetworkHandler.nickname = name
+	NetworkHandler.host()
+	_go_to_lobby()
 
 
-###################################################
-#                   CLIENT
-###################################################
-
-func _on_JoinButton_pressed():
-	print("CLIENT: joining")
-
-	var name : String = $NicknameLineEdit.text.strip_edges()
+func _on_JoinButton_pressed() -> void:
+	
+	var name: String = name_input.text.strip_edges()
 	if name == "":
 		name = "Player"
-	Network.nickname = name
 
-	var ip : String = $IpLineEdit.text.strip_edges()
+	var ip: String = address_input.text.strip_edges()
 	if ip == "":
-		print("ERROR: no IP entered")
-		return
+		ip = "127.0.0.1" 
+		
+	NetworkHandler.nickname = name
+	NetworkHandler.join(ip)
 
-	var peer := ENetMultiplayerPeer.new()
-	if peer.create_client(ip, PORT) != OK:
-		print("ERROR: cannot connect to server")
-		return
 
-	get_tree().get_multiplayer().multiplayer_peer = peer
-	print("CLIENT OK")
+func _on_connected_ok() -> void:
+	_go_to_lobby()
 
-	get_tree().change_scene_to_file("res://Lobby.tscn")
+func _on_failed() -> void:
+	error_label.text = "Connessione fallita. Controlla IP/Porta."
+
+func _go_to_lobby() -> void:
+	get_tree().change_scene_to_file("res://lobby.tscn")
