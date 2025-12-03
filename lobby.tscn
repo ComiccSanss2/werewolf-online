@@ -1,7 +1,52 @@
-[gd_scene load_steps=3 format=3 uid="uid://brnljyynm773q"]
+[gd_scene load_steps=18 format=3 uid="uid://sjbtxtro5v83"]
 
 [ext_resource type="Script" uid="uid://dfiypymj4ct8q" path="res://lobby.gd" id="1_ll2xe"]
 [ext_resource type="Texture2D" uid="uid://dl147nj717l6d" path="res://assets/LOBBY.png" id="2_xrgmn"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xrgmn"]
+bg_color = Color(1, 1, 1, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2wvic"]
+bg_color = Color(0.10980392, 0, 0.83137256, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tftiq"]
+bg_color = Color(0.09803922, 0, 0.6, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1gg6n"]
+bg_color = Color(0, 0.6, 0.12941177, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x4164"]
+bg_color = Color(0.007843138, 0.5019608, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8ldoj"]
+bg_color = Color(0.96862745, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ein8w"]
+bg_color = Color(0.6, 0.1254902, 0.1254902, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gm5bj"]
+bg_color = Color(0.9411765, 0.5803922, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_g30ku"]
+bg_color = Color(0.6, 0.32156864, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_up7ya"]
+bg_color = Color(0.654902, 0, 0.8, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mcopp"]
+bg_color = Color(0.52156866, 0, 0.6, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nu6hm"]
+bg_color = Color(1, 0.21960784, 0.93333334, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7pn7i"]
+bg_color = Color(0.78431374, 0, 0.8392157, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7b1xw"]
+bg_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wjc17"]
+bg_color = Color(0, 0, 0, 1)
 
 [node name="Lobby" type="Control"]
 layout_mode = 3
@@ -35,15 +80,80 @@ offset_bottom = 509.0
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="PlayersList" type="Label" parent="CanvasLayer"]
+[node name="ColorButton" type="Button" parent="CanvasLayer"]
+offset_left = 928.0
+offset_top = 78.0
+offset_right = 1028.0
+offset_bottom = 118.0
+text = "Couleur"
+
+[node name="ColorPanel" type="Panel" parent="CanvasLayer"]
+offset_left = 920.0
+offset_top = 130.0
+offset_right = 1065.0
+offset_bottom = 320.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_xrgmn")
+
+[node name="GridContainer" type="GridContainer" parent="CanvasLayer/ColorPanel"]
+layout_mode = 0
+offset_right = 149.0
+offset_bottom = 186.0
+theme_override_constants/h_separation = 5
+theme_override_constants/v_separation = 5
+columns = 3
+
+[node name="ButtonBlue" type="Button" parent="CanvasLayer/ColorPanel/GridContainer"]
+custom_minimum_size = Vector2(25, 35)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_2wvic")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tftiq")
+
+[node name="ButtonGreen" type="Button" parent="CanvasLayer/ColorPanel/GridContainer"]
+custom_minimum_size = Vector2(25, 35)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_1gg6n")
+theme_override_styles/hover = SubResource("StyleBoxFlat_x4164")
+
+[node name="ButtonRed" type="Button" parent="CanvasLayer/ColorPanel/GridContainer"]
+custom_minimum_size = Vector2(25, 35)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_8ldoj")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ein8w")
+
+[node name="ButtonOrange" type="Button" parent="CanvasLayer/ColorPanel/GridContainer"]
+custom_minimum_size = Vector2(25, 35)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_gm5bj")
+theme_override_styles/hover = SubResource("StyleBoxFlat_g30ku")
+
+[node name="ButtonPurple" type="Button" parent="CanvasLayer/ColorPanel/GridContainer"]
+custom_minimum_size = Vector2(25, 35)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_up7ya")
+theme_override_styles/hover = SubResource("StyleBoxFlat_mcopp")
+
+[node name="ButtonPink" type="Button" parent="CanvasLayer/ColorPanel/GridContainer"]
+custom_minimum_size = Vector2(25, 35)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_nu6hm")
+theme_override_styles/hover = SubResource("StyleBoxFlat_7pn7i")
+
+[node name="ButtonBlack" type="Button" parent="CanvasLayer/ColorPanel/GridContainer"]
+custom_minimum_size = Vector2(25, 35)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_7b1xw")
+theme_override_styles/hover = SubResource("StyleBoxFlat_wjc17")
+
+[node name="PlayersList" type="RichTextLabel" parent="CanvasLayer"]
 offset_left = 536.0
 offset_top = 209.0
 offset_right = 620.0
-offset_bottom = 232.0
+offset_bottom = 428.0
+bbcode_enabled = true
 text = "PlayersList"
 
 [node name="Lobby" type="Sprite2D" parent="."]
-position = Vector2(576.00006, 323.5)
+position = Vector2(579, 327)
 scale = Vector2(0.9999999, 0.99691826)
 texture = ExtResource("2_xrgmn")
 
