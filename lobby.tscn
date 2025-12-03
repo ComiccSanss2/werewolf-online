@@ -1,7 +1,121 @@
-[gd_scene load_steps=3 format=3 uid="uid://brnljyynm773q"]
+[gd_scene load_steps=21 format=3 uid="uid://sjbtxtro5v83"]
 
 [ext_resource type="Script" uid="uid://dfiypymj4ct8q" path="res://lobby.gd" id="1_ll2xe"]
 [ext_resource type="Texture2D" uid="uid://dl147nj717l6d" path="res://assets/LOBBY.png" id="2_xrgmn"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xrgmn"]
+resource_local_to_scene = true
+bg_color = Color(0.88, 0, 0, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2wvic"]
+bg_color = Color(0.88, 0, 0, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tftiq"]
+bg_color = Color(0.6, 0.15686275, 0.15686275, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1gg6n"]
+bg_color = Color(0.039215688, 0.078431375, 0.8117647, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x4164"]
+bg_color = Color(0.03137255, 0.039215688, 0.6, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gm5bj"]
+bg_color = Color(1, 0.58431375, 0, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_g30ku"]
+bg_color = Color(0.6901961, 0.35686275, 0, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_up7ya"]
+bg_color = Color(1, 0.9843137, 0, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mcopp"]
+bg_color = Color(0.7882353, 0.7411765, 0.047058824, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nu6hm"]
+bg_color = Color(0, 1, 0.98333335, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7pn7i"]
+bg_color = Color(0, 0.5686275, 0.6, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8ldoj"]
+bg_color = Color(0.65738595, 0.47590727, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7b1xw"]
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ein8w"]
+bg_color = Color(0.6, 0, 0.5686275, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wjc17"]
+bg_color = Color(1, 0.4318951, 0.78084207, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_hx1n1"]
+bg_color = Color(0.9772852, 0.4964832, 1, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_selw0"]
+bg_color = Color(1.999, 1.192, 0, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_b454d"]
+bg_color = Color(0.63102776, 0.42060027, 0, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
 
 [node name="Lobby" type="Control"]
 layout_mode = 3
@@ -50,9 +164,94 @@ offset_bottom = 509.0
 horizontal_alignment = 1
 vertical_alignment = 1
 
+[node name="ButtonColor" type="Button" parent="CanvasLayer"]
+offset_left = 847.0
+offset_top = 57.0
+offset_right = 1105.0
+offset_bottom = 130.0
+text = "COULEUR"
+
 [node name="Lobby" type="Sprite2D" parent="."]
 position = Vector2(576.00006, 323.5)
 scale = Vector2(0.9999999, 0.99691826)
 texture = ExtResource("2_xrgmn")
 
+[node name="ColorWindow" type="Window" parent="."]
+oversampling_override = 1.0
+theme_override_colors/title_outline_modulate = Color(0.42, 0.42, 0.42, 1)
+
+[node name="GridContainer" type="GridContainer" parent="ColorWindow"]
+layout_direction = 2
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -15.5
+offset_right = 15.5
+offset_bottom = 85.0
+grow_horizontal = 2
+columns = 3
+
+[node name="ColorButtonRed" type="Button" parent="ColorWindow/GridContainer"]
+self_modulate = Color(1, 0, 0, 1)
+custom_minimum_size = Vector2(30, 31)
+layout_mode = 2
+theme_override_constants/align_to_largest_stylebox = 5
+theme_override_styles/normal = SubResource("StyleBoxFlat_xrgmn")
+theme_override_styles/normal_mirrored = SubResource("StyleBoxFlat_2wvic")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tftiq")
+
+[node name="ColorButtonBlue" type="Button" parent="ColorWindow/GridContainer"]
+self_modulate = Color(0.016666412, 0, 1, 1)
+custom_minimum_size = Vector2(30, 31)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_1gg6n")
+theme_override_styles/hover = SubResource("StyleBoxFlat_x4164")
+
+[node name="ColorButtonOrange" type="Button" parent="ColorWindow/GridContainer"]
+self_modulate = Color(1, 0.6222802, 0.14502046, 1)
+custom_minimum_size = Vector2(30, 31)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_gm5bj")
+theme_override_styles/hover = SubResource("StyleBoxFlat_g30ku")
+
+[node name="ColorButtonYellow" type="Button" parent="ColorWindow/GridContainer"]
+self_modulate = Color(0.9843137, 1, 0, 1)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_up7ya")
+theme_override_styles/hover = SubResource("StyleBoxFlat_mcopp")
+
+[node name="ColorButtonCyan" type="Button" parent="ColorWindow/GridContainer"]
+self_modulate = Color(0, 0.9490196, 1, 1)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_nu6hm")
+theme_override_styles/hover = SubResource("StyleBoxFlat_7pn7i")
+text = "
+"
+
+[node name="ColorButtonMagenta" type="Button" parent="ColorWindow/GridContainer"]
+self_modulate = Color(0.8570065, 0.36074692, 1, 1)
+custom_minimum_size = Vector2(13, 31)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_8ldoj")
+
+[node name="ColorButtonPurple" type="Button" parent="ColorWindow/GridContainer"]
+self_modulate = Color(1, 0, 1, 1)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_7b1xw")
+theme_override_styles/hover = SubResource("StyleBoxFlat_ein8w")
+
+[node name="ColorButtonPink" type="Button" parent="ColorWindow/GridContainer"]
+self_modulate = Color(1, 0.5601512, 1, 1)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_wjc17")
+theme_override_styles/hover = SubResource("StyleBoxFlat_hx1n1")
+
+[node name="ColorButtonBrown" type="Button" parent="ColorWindow/GridContainer"]
+self_modulate = Color(0.31656918, 0.21433139, 0.19875824, 1)
+custom_minimum_size = Vector2(13, 31)
+layout_mode = 2
+theme_override_styles/normal = SubResource("StyleBoxFlat_selw0")
+theme_override_styles/hover = SubResource("StyleBoxFlat_b454d")
+
 [connection signal="pressed" from="CanvasLayer/ButtonStart" to="." method="_on_ButtonStart_pressed"]
+[connection signal="pressed" from="CanvasLayer/ButtonColor" to="." method="_on_button_color_pressed"]

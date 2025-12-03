@@ -3,6 +3,7 @@ extends CharacterBody2D
 @export var speed := 75
 @onready var anim := $AnimatedSprite2D
 
+var player_id := 0
 var last_direction := Vector2.DOWN
 var network_pos := Vector2.ZERO
 
@@ -16,8 +17,15 @@ func _enter_tree():
 
 
 func _ready():
-	pass
+	player_id = get_multiplayer_authority()
+	
+	# Appliquer la couleur stockée dans l'Autoload (Network)
+	_apply_color()
 
+func _apply_color(): # <--- NOUVELLE FONCTION
+	# Récupère la couleur de l'Autoload en utilisant l'ID du joueur
+	var color_to_apply = Network.player_colors.get(player_id, Color.WHITE)
+	anim.modulate = color_to_apply
 
 func _physics_process(delta):
 	var input_dir := Vector2.ZERO

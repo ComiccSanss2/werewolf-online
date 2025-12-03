@@ -3,7 +3,22 @@ extends Control
 @onready var players_list = $CanvasLayer/VBoxContainer
 @onready var start_button = $CanvasLayer/ButtonStart
 @onready var status_label = $CanvasLayer/LabelStatus
+@onready var color_button = $CanvasLayer/ButtonColor
+@onready var color_window = $ColorWindow
 
+# Tableau de couleurs prédéfinies si tu veux t’en servir plus tard
+var predefined_colors = [
+	Color.RED,
+	Color.GREEN,
+	Color.BLUE,
+	Color.YELLOW,
+	Color.CYAN,
+	Color.MAGENTA,
+	Color.ORANGE,
+	Color.PURPLE,
+	Color.WHITE,
+	Color.BLACK
+]
 
 ###################################################
 # READY
@@ -18,6 +33,10 @@ func _ready():
 	mp.connected_to_server.connect(_on_connected)
 	mp.connection_failed.connect(_on_failed)
 
+	# Connect bouton de sélection (tous les enfants de la grid)
+	for btn in color_window.get_node("GridContainer").get_children():
+		btn.pressed.connect(_on_color_selected.bind(btn.self_modulate))
+
 	###################################################
 	# HOST INITIALIZATION
 	###################################################
@@ -25,12 +44,17 @@ func _ready():
 		start_button.visible = true
 		start_button.disabled = false
 
+		color_button.visible = true
+		color_button.disabled = false
+
+		color_window.visible = false
+		
 		var host_id = mp.get_unique_id()
 
 		# Save host pseudo
 		Network.player_names[host_id] = Network.nickname
 
-		# Display host in UI
+		# Display host
 		_add_player(host_id)
 		_update_player_label(host_id, Network.nickname)
 
@@ -39,6 +63,7 @@ func _ready():
 	###################################################
 	else:
 		start_button.visible = false
+		color_button.visible = true
 
 
 
@@ -50,19 +75,18 @@ func _on_connected():
 	var mp = get_tree().get_multiplayer()
 	var my_id = mp.get_unique_id()
 
-	print("CLIENT: connected to server — sending nickname")
+	print("CLIENT: connected — sending nickname")
 
 	_add_player(my_id)
 	_update_player_label(my_id, Network.nickname)
 
-	# send nickname to host (ID = 1)
 	rpc_id(1, "register_name_request", Network.nickname)
 
 	status_label.text = "Connected. Waiting for players..."
 
 
 ###################################################
-# SERVER RECEIVES NAME FROM CLIENT
+# SERVER RECEIVES NAME
 ###################################################
 
 @rpc("any_peer")
@@ -75,17 +99,52 @@ func register_name_request(name: String):
 
 		print("SERVER REGISTER:", sender_id, name)
 
-		# broadcast the client's name to all players
 		rpc("register_name_broadcast", sender_id, name)
 
-		# also send host name to the newly connected client
 		var host_id = mp.get_unique_id()
 		rpc_id(sender_id, "register_name_broadcast", host_id, Network.player_names[host_id])
 
 
 
 ###################################################
-# RECEIVE A BROADCASTED NAME
+# COLOR SELECTION (NEW SYSTEM)
+###################################################
+
+func _on_button_color_pressed():
+	color_window.popup_centered()
+	color_window.visible = true
+func _on_color_selected(color: Color):
+	var mp = get_tree().get_multiplayer()
+	var my_id = mp.get_unique_id()
+
+	# Save
+	Network.player_colors[my_id] = color
+
+	# Update local UI
+	_update_player_color(my_id, color)
+
+	# Sync others
+	rpc("update_player_color_remote", my_id, color)
+
+	color_window.hide()
+
+
+@rpc("any_peer")
+func update_player_color_remote(peer_id: int, color: Color):
+	Network.player_colors[peer_id] = color
+	_update_player_color(peer_id, color)
+
+
+
+func _update_player_color(peer_id: int, color: Color):
+	if players_list.has_node(str(peer_id)):
+		var label = players_list.get_node(str(peer_id))
+		label.add_theme_color_override("font_color", color)
+
+
+
+###################################################
+# NAME BROADCAST
 ###################################################
 
 @rpc("any_peer")
@@ -100,18 +159,12 @@ func register_name_broadcast(peer_id: int, name: String):
 
 
 ###################################################
-# SIGNAL: PLAYER CONNECTED
+# CONNECT / DISCONNECT
 ###################################################
 
 func _on_player_connected(peer_id):
 	print("PLAYER CONNECTED:", peer_id)
 	_add_player(peer_id) 
-
-
-
-###################################################
-# SIGNAL: PLAYER DISCONNECTED
-###################################################
 
 func _on_player_disconnected(peer_id):
 	print("PLAYER DISCONNECTED:", peer_id)
@@ -122,7 +175,7 @@ func _on_player_disconnected(peer_id):
 
 
 ###################################################
-# UI FUNCTIONS — FINAL FIX
+# UI MANAGEMENT
 ###################################################
 
 func _add_player(peer_id):
@@ -132,10 +185,9 @@ func _add_player(peer_id):
 		label.text = "Loading..."
 		players_list.add_child(label)
 
-	# Update immediately with fallback
+	# Update right away
 	var pseudo = Network.player_names.get(peer_id, "Loading...")
 	players_list.get_node(str(peer_id)).text = pseudo + " (" + str(peer_id) + ")"
-
 
 func _update_player_label(peer_id, name):
 	await get_tree().process_frame
@@ -161,11 +213,9 @@ func _on_ButtonStart_pressed():
 	rpc("start_game_remote")
 	_start_game()
 
-
 @rpc("any_peer", "reliable")
 func start_game_remote():
 	_start_game()
-
 
 func _start_game():
 	get_tree().change_scene_to_file("res://test_scene.tscn")
@@ -173,7 +223,7 @@ func _start_game():
 
 
 ###################################################
-# CONNECTION FAILED
+# FAILED
 ###################################################
 
 func _on_failed():
