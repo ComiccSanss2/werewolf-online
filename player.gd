@@ -1,37 +1,35 @@
 extends CharacterBody2D
 
-@export var speed: float = 75.0
-var is_in_chest := false
-var move_dir := Vector2.ZERO
+@export var speed := 75
+@onready var anim := $AnimatedSprite2D
 
-var last_move_dir: Vector2 = Vector2.DOWN 
-var is_hidden: bool = false 
+var player_id := 0
+var last_direction := Vector2.DOWN
+var network_pos := Vector2.ZERO
 
-@onready var anim: AnimatedSprite2D = $AnimatedSprite2D
-@onready var name_label: Label = $NameLabel
-@onready var camera: Camera2D = $Camera2D
-@onready var chest_area: Area2D = $ChestDetector
-@onready var chest_manager: Node = $"../../TileMap_Interactions" 
-@onready var collision_shape: CollisionShape2D = $CollisionShape2D 
-@onready var press_space_label: Label = $PressSpaceLabel 
-@onready var is_occupied_label: Label = $IsOccupiedLabel 
 
-func _enter_tree() -> void:
-	pass
+func _enter_tree():
+	if is_multiplayer_authority():
+		$Camera2D.enabled = true
+		$Camera2D.make_current()
+	else:
+		$Camera2D.enabled = false
 
-func _ready() -> void:
-	# FIX: Désactive le _process si le réseau n'est pas actif pour éviter les erreurs au démarrage.
-	if not get_tree().get_multiplayer().has_multiplayer_peer():
-		set_process_mode(PROCESS_MODE_DISABLED)
-		return
-		
-	camera.enabled = is_multiplayer_authority()
+
+func _ready():
+	player_id = get_multiplayer_authority()
 	
-	_connect_chest_signals()
-	_update_name()
-	NetworkHandler.lobby_players_updated.connect(_update_name)
-	
-	# Initialisation des labels (seulement pour le joueur autorisé)
+	# Appliquer la couleur stockée dans l'Autoload (Network)
+	_apply_color()
+
+func _apply_color(): # <--- NOUVELLE FONCTION
+	# Récupère la couleur de l'Autoload en utilisant l'ID du joueur
+	var color_to_apply = Network.player_colors.get(player_id, Color.WHITE)
+	anim.modulate = color_to_apply
+
+func _physics_process(delta):
+	var input_dir := Vector2.ZERO
+
 	if is_multiplayer_authority():
 		if press_space_label:
 			press_space_label.visible = false
