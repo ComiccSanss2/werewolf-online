@@ -53,10 +53,13 @@ layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_ll2xe")
 
-[node name="CanvasLayer" type="CanvasLayer" parent="."]
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(574, 322)
+zoom = Vector2(3, 3)
 
-[node name="LabelTitle" type="Label" parent="CanvasLayer"]
+[node name="LabelTitle" type="Label" parent="."]
 visible = false
+layout_mode = 0
 offset_left = 406.0
 offset_top = 52.0
 offset_right = 744.0
@@ -65,21 +68,27 @@ text = "LOBBY"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="ButtonStart" type="Button" parent="CanvasLayer"]
-offset_left = 447.0
-offset_top = 507.0
-offset_right = 705.0
-offset_bottom = 580.0
+[node name="ButtonStart" type="Button" parent="."]
+z_index = 1
+layout_mode = 0
+offset_left = 445.0
+offset_top = 508.0
+offset_right = 703.0
+offset_bottom = 581.0
 text = "START"
 
-[node name="LabelStatus" type="Label" parent="CanvasLayer"]
-offset_left = 384.0
-offset_top = 450.0
-offset_right = 773.0
-offset_bottom = 509.0
+[node name="LabelStatus" type="Label" parent="."]
+z_index = 2
+layout_mode = 0
+offset_left = 385.0
+offset_top = 455.0
+offset_right = 774.0
+offset_bottom = 514.0
+text = "Waiting for players..."
 horizontal_alignment = 1
 vertical_alignment = 1
 
+<<<<<<< Updated upstream
 [node name="ColorButton" type="Button" parent="CanvasLayer"]
 offset_left = 928.0
 offset_top = 78.0
@@ -155,6 +164,20 @@ text = "PlayersList"
 [node name="Lobby" type="Sprite2D" parent="."]
 position = Vector2(579, 327)
 scale = Vector2(0.9999999, 0.99691826)
+=======
+[node name="PlayersList" type="Label" parent="."]
+z_index = 1
+layout_mode = 0
+offset_left = 537.0
+offset_top = 189.0
+offset_right = 621.0
+offset_bottom = 212.0
+text = "PlayersList"
+
+[node name="LobbySprite" type="Sprite2D" parent="."]
+position = Vector2(577, 323)
+scale = Vector2(0.9999999, 1.146379)
+>>>>>>> Stashed changes
 texture = ExtResource("2_xrgmn")
 
-[connection signal="pressed" from="CanvasLayer/ButtonStart" to="." method="_on_StartButton_pressed"]
+[connection signal="pressed" from="ButtonStart" to="." method="_on_StartButton_pressed"]

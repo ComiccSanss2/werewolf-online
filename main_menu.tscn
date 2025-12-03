@@ -64,5 +64,10 @@ offset_top = 456.0
 offset_right = 648.0
 offset_bottom = 479.0
 
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(577.00006, 326)
+scale = Vector2(12.279998, 11.2)
+zoom = Vector2(3, 3)
+
 [connection signal="pressed" from="HostButton" to="." method="_on_HostButton_pressed"]
 [connection signal="pressed" from="JoinButton" to="." method="_on_JoinButton_pressed"]

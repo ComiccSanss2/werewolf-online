@@ -1,5 +1,6 @@
 extends Control
 
+<<<<<<< Updated upstream
 @onready var players_list := $CanvasLayer/PlayersList
 @onready var start_button := $CanvasLayer/ButtonStart
 @onready var color_picker_panel := $CanvasLayer/ColorPanel
@@ -7,6 +8,12 @@ extends Control
 @onready var open_color_btn := $CanvasLayer/ColorButton
 
 const COLORS_CHOICES = [Color.WHITE, Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW, Color.ORANGE, Color.PURPLE, Color.CYAN, Color.MAGENTA, Color.BLACK, Color.BROWN]
+=======
+@onready var players_list := $PlayersList
+@onready var start_button := $ButtonStart
+@onready var label_status := $LabelStatus
+
+>>>>>>> Stashed changes
 
 func _ready() -> void:
 	start_button.visible = NetworkHandler.is_host # Assure-toi d'avoir is_host dans Network ou utilise multiplayer.is_server()

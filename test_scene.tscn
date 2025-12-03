@@ -1,4 +1,4 @@
-[gd_scene load_steps=30 format=3 uid="uid://bwn5wql4y1s1f"]
+[gd_scene load_steps=31 format=3 uid="uid://bwn5wql4y1s1f"]
 
 [ext_resource type="Script" uid="uid://cfoycnkuxps4n" path="res://test_scene.gd" id="1_uhqqe"]
 [ext_resource type="Script" uid="uid://d3w5otoficip0" path="res://chest_interactions.gd" id="2_0k8yu"]
@@ -15,6 +15,7 @@
 [ext_resource type="Texture2D" uid="uid://bwk5im78hnsv2" path="res://assets/Cute_Fantasy_Free/Tiles/Water_Tile.png" id="10_oo8pe"]
 [ext_resource type="Texture2D" uid="uid://bedgx3d4v75a1" path="res://assets/Cute_Fantasy_Free/Outdoor decoration/Fences.png" id="11_rpuu0"]
 [ext_resource type="Texture2D" uid="uid://k7xwkhpijmj5" path="res://assets/light.png" id="12_oo8pe"]
+[ext_resource type="PackedScene" uid="uid://bcxtla518erw8" path="res://house_door.tscn" id="16_hiucn"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_sasra"]
 texture = ExtResource("2_ia1lp")
@@ -28,7 +29,7 @@ texture = ExtResource("3_vr1i5")
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_hiucn"]
 texture = ExtResource("4_4gito")
 0:0/0 = 0
-0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, 5.274538, -8, 5.373459)
+0:0/0/physics_layer_0/polygon_0/points = PackedVector2Array(-8, -8, 8, -8, 8, -7.2490273, 8, 8, -8, 8)
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_k6its"]
 texture = ExtResource("5_fbuy2")
@@ -412,7 +413,8 @@ texture = ExtResource("11_rpuu0")
 3:3/0 = 0
 
 [sub_resource type="TileSet" id="TileSet_coq8p"]
-physics_layer_0/collision_layer = 1
+physics_layer_0/collision_layer = 3
+physics_layer_0/collision_mask = 3
 physics_layer_1/collision_layer = 1
 physics_layer_2/collision_layer = 1
 physics_layer_3/collision_layer = 1
@@ -456,6 +458,7 @@ position = Vector2(271, 351)
 position = Vector2(334, 351)
 
 [node name="TileMap_Interactions" type="Node2D" parent="."]
+light_mask = 7
 script = ExtResource("2_0k8yu")
 
 [node name="TileMap" type="TileMap" parent="TileMap_Interactions"]
@@ -549,3 +552,7 @@ texture_scale = 0.3
 color = Color(0, 0, 0, 1)
 energy = 0.5
 blend_mode = 2
+
+[node name="HouseDoor" parent="." instance=ExtResource("16_hiucn")]
+light_mask = 7
+position = Vector2(136, 188)
