@@ -1,6 +1,6 @@
 extends CharacterBody2D
 
-@export var speed: float = 150.0
+@export var speed: float = 75.0
 var is_in_chest := false
 var move_dir := Vector2.ZERO
 
