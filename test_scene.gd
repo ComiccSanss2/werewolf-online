@@ -1,72 +1,66 @@
 extends Node2D
 
-var PlayerScene = preload("res://player.tscn")
+var PlayerScene := preload("res://player.tscn")
+
+@onready var players_root: Node = $Players
+@onready var spawn_points = $SpawnPoints.get_children()
 
 
-func _ready():
-	var mp = get_tree().get_multiplayer()
+func _ready() -> void:
+	var mp := get_tree().get_multiplayer()
 
-	# connecter signaux
+	# Network signals
 	mp.peer_connected.connect(_on_player_connected)
 	mp.peer_disconnected.connect(_on_player_disconnected)
 
-	# spawn du joueur local
-	spawn_player(mp.get_unique_id())
+	if mp.is_server():
+		# Spawn host (ID 1)
+		_spawn_for_peer(mp.get_unique_id())
+		
+		# Spawna every connected client
+		for peer_id in mp.get_peers():
+			_spawn_for_peer(peer_id)
 
-	# spawn des joueurs déjà connectés
-	for peer_id in mp.get_peers():
-		if peer_id != mp.get_unique_id():
-			spawn_player(peer_id)
+
+func _on_player_connected(peer_id: int) -> void:
+	if get_tree().get_multiplayer().is_server():
+		_spawn_for_peer(peer_id)
 
 
-func _on_player_connected(peer_id):
-	var mp = get_tree().get_multiplayer()
-	var local_id = mp.get_unique_id()
+func _on_player_disconnected(peer_id: int) -> void:
+	rpc("despawn_player_on_all", peer_id)
 
-	# Ne pas spawn soi-même
-	if peer_id == local_id:
-		print("IGNORED self connect:", peer_id)
+
+func _spawn_for_peer(peer_id: int) -> void:
+	rpc("spawn_player_on_all", peer_id)
+
+
+# --- RPC: Player Creation ---
+@rpc("reliable", "call_local")
+func spawn_player_on_all(peer_id: int):
+	
+	var player_name = "Player_" + str(peer_id) 
+	
+	if players_root.has_node(player_name):
 		return
-
-	# Si déjà spawn → on ignore
-	if has_node(str(peer_id)):
-		print("Player already exists:", peer_id)
-		return
-
-	print("CONNECTED:", peer_id)
-	spawn_player(peer_id)
-
-
-func _on_player_disconnected(peer_id):
-	print("DISCONNECTED:", peer_id)
-
-	if has_node(str(peer_id)):
-		get_node(str(peer_id)).queue_free()
-
-
-#####################################
-#          SPAWN SYSTEM             #
-#####################################
-
-func spawn_player(peer_id):
-	print("SPAWN PLAYER:", peer_id)
-
+	
 	var p = PlayerScene.instantiate()
-	p.name = str(peer_id)
-
-	# Autorité réseau
+	p.name = player_name 
+	
 	p.set_multiplayer_authority(peer_id)
 
-	# Ajouter au monde
-	add_child(p)
+	# Assign random spawnpoint
+	var sp_index = randi() % spawn_points.size()
+	var sp = spawn_points[sp_index]
+	p.global_position = sp.global_position
 
-	# Spawnpoint aléatoire
-	var spawns = $SpawnPoints.get_children()
-	var spawn = spawns[randi() % spawns.size()]
-	p.global_position = spawn.global_position
+	players_root.add_child(p)
 
-	# ASSIGNER LE PSEUDO AU LABEL AU-DESSUS DU JOUEUR
-	if p.has_node("NameLabel"):
-		p.get_node("NameLabel").text = Network.player_names.get(peer_id, "Player")
 
-	print("SET AUTHORITY:", peer_id, "SPAWN:", spawn.name)
+# --- RPC: Kill PLayer (despawn) ---
+@rpc("reliable", "call_local")
+func despawn_player_on_all(peer_id: int):
+	var player_name = "Player_" + str(peer_id) 
+	var p := players_root.get_node_or_null(player_name)
+	if p:
+		p.queue_free()

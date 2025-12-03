@@ -20,12 +20,14 @@ var predefined_colors = [
 	Color.BLACK
 ]
 
-###################################################
-# READY
-###################################################
+func _update_list(players: Dictionary) -> void:
+	players_list.text = ""
+	for id in players.keys():
+		players_list.text += "- %s\n" % players[id]["name"]
 
-func _ready():
-	var mp = get_tree().get_multiplayer()
+func _on_StartButton_pressed() -> void:
+	if NetworkHandler.is_host:
+		NetworkHandler.start_game()
 
 	# Connect network signals
 	mp.peer_connected.connect(_on_player_connected)
