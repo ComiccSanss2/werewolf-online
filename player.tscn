@@ -338,3 +338,12 @@ text = "Press Space"
 label_settings = SubResource("LabelSettings_i3pqv")
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="IsOccupiedLabel" type="Label" parent="."]
+texture_filter = 1
+offset_left = 11.0
+offset_top = -8.0
+offset_right = 177.0
+offset_bottom = 15.0
+scale = Vector2(0.3200031, 0.35999876)
+text = "Hiding spot occupied."

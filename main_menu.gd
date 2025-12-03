@@ -37,7 +37,7 @@ func _on_connected_ok() -> void:
 	_go_to_lobby()
 
 func _on_failed() -> void:
-	error_label.text = "Connessione fallita. Controlla IP/Porta."
+	error_label.text = "Connection Failed"
 
 func _go_to_lobby() -> void:
 	get_tree().change_scene_to_file("res://lobby.tscn")
