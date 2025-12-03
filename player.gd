@@ -5,6 +5,7 @@ var is_in_chest := false
 var move_dir := Vector2.ZERO
 var last_move_dir: Vector2 = Vector2.DOWN 
 var is_hidden: bool = false 
+var is_dead: bool = false  # Nouvelle variable pour l'état de mort
 
 @onready var anim: AnimatedSprite2D = $AnimatedSprite2D
 @onready var name_label: Label = $NameLabel
@@ -24,8 +25,6 @@ func _ready() -> void:
 	
 	_connect_chest_signals()
 	
-	_apply_color_from_network()
-	
 	# Mise à jour initiale (Couleur + Nom)
 	_update_visuals()
 	
@@ -42,46 +41,54 @@ func _ready() -> void:
 	
 	print("--- PLAYER READY (ID: %s) ---" % get_multiplayer_authority())
 
-func _apply_color_from_network():
-	var id = str(name).to_int()
+# Cette fonction gère TOUT (Nom, Rôle et Couleur)
+func _update_visuals() -> void:
+	if not name_label: return
 	
-	if NetworkHandler.players.has(id):
-		var data = NetworkHandler.players[id]
-		if data.has("color"):
-			$AnimatedSprite2D.modulate = data["color"]
-			$NameLabel.text = data["name"]
+	# Récupère l'ID via l'autorité multi-joueur
+	var id = get_multiplayer_authority()
+	var player_data = NetworkHandler.players.get(id)
+	
+	if player_data:
+		# 1. Nom
+		var name_text = ""
+		if player_data.has("name"):
+			name_text = player_data["name"]
+		else:
+			name_text = "Player %s" % id
+		
+		# 2. Rôle (ajouter entre parenthèses si présent)
+		if player_data.has("role"):
+			name_text += " (%s)" % player_data["role"]
+		
+		name_label.text = name_text
+		
+		# 3. Couleur
+		if player_data.has("color"):
+			anim.modulate = player_data["color"]
+			name_label.modulate = player_data["color"] # Colore aussi le nom
+		else:
+			anim.modulate = Color.WHITE
+			name_label.modulate = Color.WHITE
+	else:
+		name_label.text = "Player %s" % id
+		anim.modulate = Color.WHITE
+		name_label.modulate = Color.WHITE
 
 func _connect_chest_signals() -> void:
 	chest_area.area_entered.connect(_on_area_entered, 4)
 	chest_area.area_exited.connect(_on_area_exited, 4)
 
-# Cette fonction gère TOUT (Nom et Couleur)
-func _update_visuals() -> void:
-	if not name_label: return
-	
-	# Récupère l'ID via le nom du noeud (ex: "1", "34562")
-	var id_str = str(name)
-	if not id_str.is_valid_int():
-		return # Évite les erreurs si le noeud ne s'appelle pas par un chiffre
-		
-	var id = id_str.to_int()
-	var player_data = NetworkHandler.players.get(id)
-	
-	if player_data:
-		# 1. Nom
-		if player_data.has("name"):
-			name_label.text = player_data["name"]
-		
-		# 2. Couleur
-		if player_data.has("color"):
-			anim.modulate = player_data["color"]
-			name_label.modulate = player_data["color"] # (Optionnel) colore aussi le nom
-	else:
-		name_label.text = "Player %s" % id
-		anim.modulate = Color.WHITE
-
 func _process(delta: float) -> void:
 	if not is_multiplayer_authority(): return
+	
+	# Vérifier si le joueur est mort - empêcher tout mouvement et interaction
+	if is_dead or NetworkHandler.is_player_dead(get_multiplayer_authority()):
+		is_dead = true
+		velocity = Vector2.ZERO
+		move_and_slide()
+		# Ne pas envoyer de mise à jour réseau si mort
+		return
 
 	# LOGIQUE D'AFFICHAGE/NETTOYAGE UI
 	if not is_hidden:
@@ -97,6 +104,10 @@ func _process(delta: float) -> void:
 
 	if Input.is_action_just_pressed("ui_accept"):
 		_try_hide_or_open_chest()
+	
+	# Exemple: Tuer un joueur proche avec la touche K (vous pouvez changer la touche)
+	if Input.is_action_just_pressed("kill"):  # ou une autre action
+		_try_kill_nearby_player()
 
 	if is_hidden:
 		velocity = Vector2.ZERO
@@ -179,12 +190,27 @@ func update_chest_ui(is_occupied: bool):
 @rpc("any_peer", "call_local", "unreliable")
 func _net_state(pos: Vector2, dir: Vector2, last_dir: Vector2) -> void:
 	if is_multiplayer_authority(): return
+	
+	# Ne pas mettre à jour la position si le joueur est mort
+	if is_dead:
+		return
+		
 	global_position = pos
 	move_dir = dir
 	last_move_dir = last_dir
 	if not is_hidden: _update_animation()
 
 func _update_animation() -> void:
+	# Si le joueur est mort, jouer l'animation death en boucle
+	if is_dead:
+		# Vérifier si l'animation death existe avant de la jouer
+		if anim.sprite_frames.has_animation("death"):
+			anim.play("death")
+		else:
+			# Si l'animation n'existe pas, arrêter l'animation
+			anim.stop()
+		return
+	
 	var current_dir = move_dir
 	if current_dir == Vector2.ZERO:
 		current_dir = last_move_dir
@@ -208,3 +234,70 @@ func _on_area_entered(a: Area2D) -> void:
 func _on_area_exited(a: Area2D) -> void:
 	if is_multiplayer_authority() and a.has_meta("chest"):
 		is_in_chest = false
+
+# Nouvelle fonction pour tuer un joueur proche
+func _try_kill_nearby_player() -> void:
+	if not is_multiplayer_authority():
+		return
+	
+	# Vérifier que le joueur n'est pas mort
+	if NetworkHandler.is_player_dead(get_multiplayer_authority()):
+		return
+	
+	# Optionnel: Vérifier que seul un loup-garou peut tuer
+	if not NetworkHandler.is_werewolf(get_multiplayer_authority()):
+		print("Seuls les loups-garous peuvent tuer")
+		return
+	
+	var my_id = get_multiplayer_authority()
+	var kill_range = 15.0  # Distance maximale pour tuer
+	
+	# Chercher les joueurs proches
+	var players_root = get_tree().get_root().get_node_or_null("TestScene/Players")
+	if not players_root:
+		return
+	
+	for child in players_root.get_children():
+		if child == self:
+			continue
+		
+		var target_id = child.get_multiplayer_authority()
+		
+		# Vérifier que le joueur cible n'est pas mort
+		if NetworkHandler.is_player_dead(target_id):
+			continue
+		
+		# Vérifier la distance
+		var distance = global_position.distance_to(child.global_position)
+		if distance <= kill_range:
+			# Envoyer la demande de kill au serveur
+			NetworkHandler.rpc_id(1, "request_kill_player", target_id)
+			print("Tentative de tuer le joueur %d" % target_id)
+			break
+
+# Nouvelle fonction RPC pour jouer l'animation death
+@rpc("any_peer", "call_local", "reliable")
+func play_death_animation() -> void:
+	is_dead = true
+	velocity = Vector2.ZERO
+	
+	# Désactiver les interactions
+	collision_shape.disabled = true
+	
+	# Masquer les labels UI si présents
+	if press_space_label:
+		press_space_label.visible = false
+	if is_occupied_label:
+		is_occupied_label.visible = false
+	
+	# Jouer l'animation death
+	if anim.sprite_frames.has_animation("death"):
+		anim.play("death")
+		# S'assurer que l'animation reste en boucle (si configurée ainsi)
+		print("Animation death jouée pour le joueur %d" % get_multiplayer_authority())
+	else:
+		push_warning("Animation 'death' non trouvée dans les SpriteFrames")
+		anim.stop()
+	
+	# Empêcher toute mise à jour de position
+	move_dir = Vector2.ZERO

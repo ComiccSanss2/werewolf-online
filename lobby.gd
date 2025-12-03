@@ -51,13 +51,19 @@ func _on_color_chosen(color: Color):
 @rpc("any_peer", "call_local", "reliable")
 func update_player_color_rpc(new_color: Color):
 	var sender_id = multiplayer.get_remote_sender_id()
+	if sender_id == 0:
+		sender_id = multiplayer.get_unique_id()
 	
 	# On met à jour la mémoire globale (Network)
 	if NetworkHandler.players.has(sender_id):
 		NetworkHandler.players[sender_id]["color"] = new_color
 		
-		# On force la mise à jour visuelle de la liste
-		_update_list(NetworkHandler.players)
+		# Synchroniser avec tous les clients
+		if NetworkHandler.is_host:
+			NetworkHandler.rpc("_sync_lobby_data", NetworkHandler.players)
+		else:
+			# Si on est client, on met juste à jour localement
+			_update_list(NetworkHandler.players)
 
 # -----------------------------
 
@@ -66,9 +72,9 @@ func _update_list(players: Dictionary) -> void:
 	
 	for id in players.keys():
 		var p_name = players[id]["name"]
-		var random_col = COLORS_CHOICES.pick_random()
 		
-		var p_color = players[id].get("color", random_col)
+		# Utiliser la couleur assignée, ou une couleur par défaut si absente
+		var p_color = players[id].get("color", Color.WHITE)
 		
 		var hex_code = p_color.to_html(false)
 		
