@@ -25,6 +25,8 @@ func _ready() -> void:
 	
 	_connect_chest_signals()
 	
+	_apply_color_from_network()
+	
 	# Mise à jour initiale (Couleur + Nom)
 	_update_visuals()
 	
@@ -74,10 +76,43 @@ func _update_visuals() -> void:
 		name_label.text = "Player %s" % id
 		anim.modulate = Color.WHITE
 		name_label.modulate = Color.WHITE
+func _apply_color_from_network():
+	var id = str(name).to_int()
+	
+	if NetworkHandler.players.has(id):
+		var data = NetworkHandler.players[id]
+		if data.has("color"):
+			$AnimatedSprite2D.modulate = data["color"]
+			$NameLabel.text = data["name"]
 
 func _connect_chest_signals() -> void:
 	chest_area.area_entered.connect(_on_area_entered, 4)
 	chest_area.area_exited.connect(_on_area_exited, 4)
+
+# Cette fonction gère TOUT (Nom et Couleur)
+func _update_visuals() -> void:
+	if not name_label: return
+	
+	# Récupère l'ID via le nom du noeud (ex: "1", "34562")
+	var id_str = str(name)
+	if not id_str.is_valid_int():
+		return # Évite les erreurs si le noeud ne s'appelle pas par un chiffre
+		
+	var id = id_str.to_int()
+	var player_data = NetworkHandler.players.get(id)
+	
+	if player_data:
+		# 1. Nom
+		if player_data.has("name"):
+			name_label.text = player_data["name"]
+		
+		# 2. Couleur
+		if player_data.has("color"):
+			anim.modulate = player_data["color"]
+			name_label.modulate = player_data["color"] # (Optionnel) colore aussi le nom
+	else:
+		name_label.text = "Player %s" % id
+		anim.modulate = Color.WHITE
 
 func _process(delta: float) -> void:
 	if not is_multiplayer_authority(): return

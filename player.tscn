@@ -346,7 +346,7 @@ radius = 8.0
 [sub_resource type="LabelSettings" id="LabelSettings_i3pqv"]
 
 [node name="Player" type="CharacterBody2D"]
-collision_mask = 3
+collision_mask = 7
 script = ExtResource("1_4flbx")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
@@ -362,7 +362,7 @@ position = Vector2(-0.25, 0.5)
 shape = SubResource("RectangleShape2D_bwjto")
 
 [node name="Camera2D" type="Camera2D" parent="."]
-zoom = Vector2(5, 5)
+zoom = Vector2(13, 13)
 
 [node name="NameLabel" type="Label" parent="."]
 offset_left = -6.0
@@ -372,8 +372,12 @@ offset_bottom = 10.000001
 scale = Vector2(0.2, 0.2)
 
 [node name="ChestDetector" type="Area2D" parent="."]
+scale = Vector2(1.719999, 1.3999994)
+collision_layer = 2
+collision_mask = 7
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="ChestDetector"]
+scale = Vector2(0.8911608, 1.0457132)
 shape = SubResource("CircleShape2D_i3pqv")
 
 [node name="PressSpaceLabel" type="Label" parent="."]
@@ -390,6 +394,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="IsOccupiedLabel" type="Label" parent="."]
+visible = false
 texture_filter = 1
 offset_left = 11.0
 offset_top = -8.0
