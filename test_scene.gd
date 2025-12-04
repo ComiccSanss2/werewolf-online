@@ -94,6 +94,7 @@ func start_game_timer():
 	for child in bodies_container.get_children():
 		child.queue_free()
 	is_voting_phase = false
+	NetworkHandler.reset_night_actions()
 	game_timer.start(GAME_DURATION)
 	rpc("sync_game_timer", GAME_DURATION)
 
@@ -196,7 +197,7 @@ func _resolve_voting_results():
 
 # RPC: Vote terminé
 @rpc("call_local", "reliable")
-func rpc_voting_completed(elim_id: int, tie: bool):
+func rpc_voting_completed(_elim_id: int, _tie: bool):
 	voting_ui.visible = false
 	is_voting_phase = false
 
@@ -231,9 +232,9 @@ func _on_go_back_to_menu():
 
 # RPC: Spawn un cadavre sur tous les clients
 @rpc("call_local", "reliable")
-func spawn_corpse_on_all(pos: Vector2, color: Color, is_flipped: bool):
-	print("SPAWN CORPS à ", pos)
+func spawn_corpse_on_all(player_id: int, pos: Vector2, color: Color, is_flipped: bool):
 	var corpse = AnimatedSprite2D.new()
+	corpse.name = "Corpse_%d" % player_id
 	corpse.sprite_frames = player_sprite_frames
 	corpse.z_index = 1
 	corpse.modulate = color
@@ -253,6 +254,12 @@ func spawn_corpse_on_all(pos: Vector2, color: Color, is_flipped: bool):
 			corpse.frame = corpse.sprite_frames.get_frame_count("death") - 1
 	)
 	bodies_container.add_child(corpse)
+
+# RPC: Supprime un cadavre lors d'une résurrection
+@rpc("call_local", "reliable")
+func remove_corpse_on_all(player_id: int):
+	var corpse = bodies_container.get_node_or_null("Corpse_%d" % player_id)
+	if corpse: corpse.queue_free()
 
 # ========== Handshake et synchronisation ==========
 
@@ -283,7 +290,7 @@ func _handle_new_player_ready(new_id: int):
 # ========== Gestion des joueurs (spawn/despawn) ==========
 
 # Signal: Joueur connecté (non utilisé, handshake manuel)
-func _on_player_connected(id: int): pass
+func _on_player_connected(_id: int): pass
 
 # Signal: Joueur déconnecté
 func _on_player_disconnected(id: int):

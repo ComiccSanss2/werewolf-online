@@ -60,8 +60,8 @@ func _setup_signals() -> void:
 # ========== Gestion des joueurs ==========
 
 # Ajoute un joueur au dictionnaire
-func _add_player(id: int, name: String) -> void:
-	players[id] = {"name": name, "color": _get_available_color()}
+func _add_player(id: int, player_name: String) -> void:
+	players[id] = {"name": player_name, "color": _get_available_color()}
 	if is_host: rpc("_sync_lobby_data", players)
 
 # Retourne une couleur non utilisée
@@ -107,8 +107,8 @@ func request_nickname() -> void:
 
 # RPC: Reçoit le pseudo d'un joueur
 @rpc("reliable", "any_peer")
-func receive_nickname(name: String) -> void:
-	_add_player(multiplayer.get_remote_sender_id(), name)
+func receive_nickname(player_name: String) -> void:
+	_add_player(multiplayer.get_remote_sender_id(), player_name)
 
 # Signal: Joueur connecté
 func _on_peer_connected(id: int) -> void:
@@ -138,6 +138,7 @@ func _assign_roles() -> void:
 		var pid = shuffled[i]
 		if i < num_werewolves:
 			players[pid]["role"] = ROLE_WEREWOLF
+			players[pid]["has_killed"] = false
 		elif i == num_werewolves and n >= 3:
 			players[pid]["role"] = ROLE_SORCIERE
 			players[pid]["has_revived"] = false
@@ -156,6 +157,14 @@ func start_game():
 @rpc("any_peer", "call_local", "reliable")
 func rpc_start_game():
 	game_started.emit()
+
+# Réinitialise les kills des loups-garous (début de nuit)
+func reset_night_actions():
+	if not multiplayer.is_server(): return
+	for pid in players:
+		if is_werewolf(pid):
+			players[pid]["has_killed"] = false
+	rpc("_sync_lobby_data", players)
 
 # ========== Système de cachettes (coffres) ==========
 
@@ -234,7 +243,14 @@ func get_dead_players() -> Array:
 @rpc("any_peer", "call_local", "reliable")
 func request_kill_player(target_id: int) -> void:
 	if not multiplayer.is_server(): return
-	if not players.has(target_id) or is_player_dead(target_id): return
+	
+	var killer_id = _get_sender_id()
+	
+	# Validations
+	if not players.has(killer_id) or not players.has(target_id): return
+	if not is_werewolf(killer_id) or is_player_dead(killer_id): return
+	if is_player_dead(target_id): return
+	if players[killer_id].get("has_killed", false): return
 	
 	var scene = get_game_scene()
 	if not scene: return
@@ -252,10 +268,11 @@ func request_kill_player(target_id: int) -> void:
 		victim_node.rpc("play_death_animation")
 	
 	players[target_id]["is_dead"] = true
+	players[killer_id]["has_killed"] = true
 	rpc("_sync_lobby_data", players)
 	
 	# Spawn du cadavre
-	scene.rpc("spawn_corpse_on_all", pos, col, is_flipped)
+	scene.rpc("spawn_corpse_on_all", target_id, pos, col, is_flipped)
 	
 	check_win_condition()
 
@@ -281,7 +298,11 @@ func request_revive_player(target_id: int) -> void:
 	players[target_id]["is_dead"] = false
 	players[sorciere_id]["has_revived"] = true
 	rpc("_sync_lobby_data", players)
-	rpc("revive_player_in_scene", target_id)
+	
+	var scene = get_game_scene()
+	if scene:
+		scene.rpc("remove_corpse_on_all", target_id)
+		rpc("revive_player_in_scene", target_id)
 
 # RPC: Ressuscite un joueur dans la scène
 @rpc("any_peer", "call_local", "reliable")
