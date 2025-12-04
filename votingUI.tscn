@@ -1,0 +1,81 @@
+[gd_scene load_steps=8 format=3 uid="uid://ci5161vfs7r7j"]
+
+[ext_resource type="Script" uid="uid://67h077mpt7cd" path="res://voting_screen.gd" id="1_idhib"]
+[ext_resource type="Texture2D" uid="uid://bfmuvpgk1qt5i" path="res://assets/backgroundvote.png" id="2_qynmp"]
+
+[sub_resource type="Gradient" id="Gradient_idhib"]
+offsets = PackedFloat32Array(0.9970238, 1)
+colors = PackedColorArray(1, 0.25369403, 0.721538, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_qynmp"]
+gradient = SubResource("Gradient_idhib")
+width = 4
+height = 4
+fill = 1
+
+[sub_resource type="Gradient" id="Gradient_qwxpf"]
+offsets = PackedFloat32Array(0, 0.49596775, 1)
+colors = PackedColorArray(0.5513961, 0.0002242893, 0.55303705, 1, 1, 1, 1, 1, 0.81549215, 0.00013053059, 0.6880232, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_2ou5j"]
+gradient = SubResource("Gradient_qwxpf")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_cjaby"]
+particle_flag_disable_z = true
+emission_shape = 3
+emission_box_extents = Vector3(600, 400, 1)
+gravity = Vector3(0, 0, 0)
+scale_min = 0.5
+scale_max = 1.5
+color_ramp = SubResource("GradientTexture1D_2ou5j")
+
+[node name="VotingScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_idhib")
+
+[node name="BackgroundSky" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.97628254, 0.96956784, 0.99335665, 1)
+
+[node name="Stars" type="GPUParticles2D" parent="."]
+position = Vector2(577, 361)
+scale = Vector2(0.9600024, -0.90815324)
+amount = 150
+texture = SubResource("GradientTexture2D_qynmp")
+lifetime = 4.0
+preprocess = 4.0
+process_material = SubResource("ParticleProcessMaterial_cjaby")
+
+[node name="TextureRect" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_qynmp")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GridContainer" type="GridContainer" parent="."]
+layout_mode = 0
+offset_left = 459.0
+offset_top = 162.0
+offset_right = 698.0
+offset_bottom = 565.0

@@ -7,91 +7,51 @@ var players: Dictionary = {}
 signal lobby_players_updated(players)
 signal game_started
 signal connection_failed_ui
+signal game_over(winning_team) 
 
 const DEFAULT_PORT: int = 8910
 const MAX_PLAYERS: int = 8
-
 const ROLE_VILLAGEOIS: String = "villageois"
 const ROLE_WEREWOLF: String = "werewolf"
-
-# Palette de couleurs disponibles
-const PLAYER_COLORS = [
-	Color.RED,
-	Color.BLUE,
-	Color.GREEN,
-	Color.YELLOW,
-	Color.ORANGE,
-	Color.PURPLE,
-	Color.CYAN,
-	Color.MAGENTA,
-	Color(1.0, 0.5, 0.0),  # Orange foncé
-	Color(0.5, 0.0, 0.5),  # Violet foncé
-]
+const PLAYER_COLORS = [Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW, Color.ORANGE, Color.PURPLE, Color.CYAN, Color.MAGENTA, Color(1.0, 0.5, 0.0), Color(0.5, 0.0, 0.5)]
 
 func host(port: int = DEFAULT_PORT) -> void:
 	is_host = true
 	players = {}
-	
 	var peer = ENetMultiplayerPeer.new()
-	var error = peer.create_server(port, MAX_PLAYERS)
-	
-	if error != OK:
-		print("HOSTING FAILED: ", error)
-		return
-		
+	if peer.create_server(port, MAX_PLAYERS) != OK: return
 	multiplayer.multiplayer_peer = peer
-	
 	_add_player(multiplayer.get_unique_id(), nickname)
 	_setup_signals()
 
 func join(ip: String, port: int = DEFAULT_PORT) -> void:
 	is_host = false
 	players = {}
-	
 	var peer = ENetMultiplayerPeer.new()
-	var error = peer.create_client(ip, port)
-	
-	if error != OK:
-		print("JOIN FAILED: ", error)
-		return
-
+	if peer.create_client(ip, port) != OK: return
 	multiplayer.multiplayer_peer = peer
 	_setup_signals()
 
 func _setup_signals() -> void:
-	multiplayer.peer_connected.connect(_on_peer_connected)
-	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
-	multiplayer.connection_failed.connect(func(): connection_failed_ui.emit())
-	
-# --- 2. Gestione della Lobby e Sincronizzazione ---
+	if not multiplayer.peer_connected.is_connected(_on_peer_connected):
+		multiplayer.peer_connected.connect(_on_peer_connected)
+	if not multiplayer.peer_disconnected.is_connected(_on_peer_disconnected):
+		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
+	if not multiplayer.connection_failed.is_connected(func(): connection_failed_ui.emit()):
+		multiplayer.connection_failed.connect(func(): connection_failed_ui.emit())
 
 func _add_player(id: int, name: String) -> void:
 	players[id] = {"name": name}
-	
-	# Assigner une couleur unique si le joueur n'en a pas déjà une
-	if not players[id].has("color"):
-		players[id]["color"] = _get_available_color()
-	
-	if is_host:
-		rpc("_sync_lobby_data", players)
+	if not players[id].has("color"): players[id]["color"] = _get_available_color()
+	if is_host: rpc("_sync_lobby_data", players)
 
-# Fonction pour obtenir une couleur disponible (non utilisée)
 func _get_available_color() -> Color:
-	var used_colors = []
-	
-	# Collecter toutes les couleurs déjà utilisées
-	for player_id in players.keys():
-		if players[player_id].has("color"):
-			used_colors.append(players[player_id]["color"])
-	
-	# Trouver la première couleur disponible
-	for color in PLAYER_COLORS:
-		if not used_colors.has(color):
-			return color
-	
-	# Si toutes les couleurs sont utilisées, retourner une couleur aléatoire
+	var used = []
+	for pid in players:
+		if players[pid].has("color"): used.append(players[pid]["color"])
+	for c in PLAYER_COLORS:
+		if not c in used: return c
 	return PLAYER_COLORS.pick_random()
-
 
 @rpc("any_peer", "call_local", "reliable")
 func _sync_lobby_data(synced_players: Dictionary) -> void:
@@ -99,18 +59,13 @@ func _sync_lobby_data(synced_players: Dictionary) -> void:
 	lobby_players_updated.emit(players)
 
 @rpc("reliable")
-func request_nickname() -> void:
-	rpc_id(1, "receive_nickname", nickname)
+func request_nickname() -> void: rpc_id(1, "receive_nickname", nickname)
 
 @rpc("reliable", "any_peer")
-func receive_nickname(name: String) -> void:
-	var new_id = multiplayer.get_remote_sender_id()
-	_add_player(new_id, name)
-
+func receive_nickname(name: String) -> void: _add_player(multiplayer.get_remote_sender_id(), name)
 
 func _on_peer_connected(id: int) -> void:
-	if is_host:
-		rpc_id(id, "request_nickname")
+	if is_host: rpc_id(id, "request_nickname")
 
 func _on_peer_disconnected(id: int) -> void:
 	if is_host:
@@ -118,38 +73,18 @@ func _on_peer_disconnected(id: int) -> void:
 		rpc("_sync_lobby_data", players)
 
 func _assign_roles() -> void:
-	if not is_host:
-		return
-	
-	var player_ids = players.keys()
-	var num_players = player_ids.size()
-	
-	if num_players < 2:
-		print("Pas assez de joueurs pour assigner les rôles")
-		return
-	
-	# Calculer le nombre de loups-garous (environ 1/4 des joueurs, minimum 1)
-	var num_werewolves = max(1, num_players / 4)
-	if num_players <= 4:
-		num_werewolves = 1
-	elif num_players <= 8:
-		num_werewolves = 2
-	
-	# Mélanger les IDs pour une distribution aléatoire
-	var shuffled_ids = player_ids.duplicate()
-	shuffled_ids.shuffle()
-	
-	# Assigner les rôles
-	for i in range(shuffled_ids.size()):
-		var player_id = shuffled_ids[i]
-		if i < num_werewolves:
-			players[player_id]["role"] = ROLE_WEREWOLF
-		else:
-			players[player_id]["role"] = ROLE_VILLAGEOIS
-	
-	# Synchroniser les rôles avec tous les clients
+	if not is_host: return
+	var ids = players.keys()
+	if ids.size() < 2: return
+	var num_wolves = max(1, ids.size() / 4)
+	if ids.size() <= 4: num_wolves = 1
+	elif ids.size() <= 8: num_wolves = 2
+	var shuffled = ids.duplicate()
+	shuffled.shuffle()
+	for i in range(shuffled.size()):
+		var pid = shuffled[i]
+		players[pid]["role"] = ROLE_WEREWOLF if i < num_wolves else ROLE_VILLAGEOIS
 	rpc("_sync_lobby_data", players)
-	print("Rôles assignés: ", players)
 
 func start_game():
 	if is_host:
@@ -160,162 +95,116 @@ func start_game():
 func rpc_start_game():
 	game_started.emit()
 
+# --- HELPER SECURISE POUR TROUVER LA SCENE ---
+func get_game_scene() -> Node:
+	return get_tree().get_root().get_node_or_null("TestScene")
 
-
+# --- GESTION COFFRES ---
 @rpc("any_peer", "call_local", "reliable")
-func request_player_hide_state(new_state: bool, chest_position: Vector2 = Vector2.ZERO): 
-	if not get_tree().get_multiplayer().is_server(): return
-
-	var requester_id: int = multiplayer.get_remote_sender_id()
-	if requester_id == 0:
-		requester_id = multiplayer.get_unique_id()
+func request_player_hide_state(new_state: bool, chest_pos: Vector2 = Vector2.ZERO): 
+	if not multiplayer.is_server(): return
+	var req_id = multiplayer.get_remote_sender_id()
+	if req_id == 0: req_id = multiplayer.get_unique_id()
 	
-	var chest_manager = get_tree().get_root().get_node_or_null("TestScene/TileMap_Interactions")
-	if not chest_manager:
-		push_error("TileMap_Interactions non trovato.")
-		return
+	var scene = get_game_scene()
+	if not scene: return
+	
+	var chest_mgr = scene.get_node_or_null("TileMap_Interactions")
+	if not chest_mgr: return
 
 	if new_state: 
-		
-		# 1. Vérifie si le coffre est libre
-		if chest_manager.is_chest_free(chest_position):
-			
-			# 2. Marque le coffre comme occupée et synchronise l'état du joueur
-			chest_manager.set_chest_occupant(chest_position, requester_id)
-			_find_and_sync_player_state(requester_id, new_state)
-	
-	else: # Demande de Révélation (Unhiding)
-		
-		chest_manager.clear_chest_occupant(requester_id) 
-		_find_and_sync_player_state(requester_id, new_state)
-
-
-func _find_and_sync_player_state(player_id: int, new_state: bool):
-	
-	var player_node_path = "TestScene/Players/Player_" + str(player_id) 
-	
-	var root = get_tree().get_root()
-	
-	var player_node = root.get_node_or_null(player_node_path) 
-
-	if player_node:
-		player_node.rpc("sync_player_visual_state", new_state)
+		if chest_mgr.is_chest_free(chest_pos):
+			chest_mgr.set_chest_occupant(chest_pos, req_id)
+			_sync_player_node_state(req_id, new_state)
 	else:
-		push_error("ERROR, Node Player not found " + str(player_id) + " On Path: " + player_node_path)
+		chest_mgr.clear_chest_occupant(req_id) 
+		_sync_player_node_state(req_id, new_state)
 
-
-
+func _sync_player_node_state(pid: int, state: bool):
+	var scene = get_game_scene()
+	if not scene: return
+	var p = scene.get_node_or_null("Players/Player_" + str(pid))
+	if p: p.rpc("sync_player_visual_state", state)
 
 @rpc("any_peer", "call_local", "reliable")
-func request_chest_occupancy_state(chest_position: Vector2):
-	if not get_tree().get_multiplayer().is_server(): return
-
-	var requester_id: int = multiplayer.get_remote_sender_id()
-	if requester_id == 0:
-		requester_id = multiplayer.get_unique_id()
+func request_chest_occupancy_state(chest_pos: Vector2):
+	if not multiplayer.is_server(): return
+	var req_id = multiplayer.get_remote_sender_id()
+	if req_id == 0: req_id = multiplayer.get_unique_id()
 	
-	var chest_manager = get_tree().get_root().get_node_or_null("TestScene/TileMap_Interactions")
-	if not chest_manager: return
-
-	var is_occupied = !chest_manager.is_chest_free(chest_position)
-	
-	# Le serveur répond directement au client demandeur
-	rpc_id(requester_id, "receive_chest_occupancy_state", is_occupied)
+	var scene = get_game_scene()
+	if not scene: return
+	var chest_mgr = scene.get_node_or_null("TileMap_Interactions")
+	if chest_mgr:
+		rpc_id(req_id, "receive_chest_occupancy_state", !chest_mgr.is_chest_free(chest_pos))
 
 @rpc("reliable", "call_local") 
 func receive_chest_occupancy_state(is_occupied: bool):
-	var player_id = multiplayer.get_unique_id()
-	var player_node_path = "TestScene/Players/Player_" + str(player_id) 
-	
-	var root = get_tree().get_root()
-	var player_node = root.get_node_or_null(player_node_path) 
-	
-	if player_node:
-		player_node.update_chest_ui(is_occupied)
+	var scene = get_game_scene()
+	if not scene: return
+	var p = scene.get_node_or_null("Players/Player_" + str(multiplayer.get_unique_id()))
+	if p: p.update_chest_ui(is_occupied)
 
-func get_player_role(player_id: int) -> String:
-	if players.has(player_id):
-		return players[player_id].get("role", ROLE_VILLAGEOIS)
-	return ROLE_VILLAGEOIS
-
-# Fonction pour vérifier si un joueur est loup-garou
-func is_werewolf(player_id: int) -> bool:
-	return get_player_role(player_id) == ROLE_WEREWOLF
-
-# Fonction pour obtenir tous les loups-garous
-func get_werewolves() -> Array:
-	var werewolves = []
-	for player_id in players.keys():
-		if is_werewolf(player_id):
-			werewolves.append(player_id)
-	return werewolves
-
-# Fonction pour vérifier si un joueur est mort
-func is_player_dead(player_id: int) -> bool:
-	if players.has(player_id):
-		return players[player_id].get("is_dead", false)
-	return false
-
-# Fonction pour obtenir tous les joueurs vivants
+# --- HELPERS ---
+func is_werewolf(id: int) -> bool: return players.has(id) and players[id].get("role") == ROLE_WEREWOLF
+func is_player_dead(id: int) -> bool: return players.has(id) and players[id].get("is_dead", false)
 func get_alive_players() -> Array:
-	var alive = []
-	for player_id in players.keys():
-		if not is_player_dead(player_id):
-			alive.append(player_id)
-	return alive
+	var a = []
+	for id in players:
+		if not is_player_dead(id): a.append(id)
+	return a
 
-# Fonction pour obtenir tous les joueurs morts
-func get_dead_players() -> Array:
-	var dead = []
-	for player_id in players.keys():
-		if is_player_dead(player_id):
-			dead.append(player_id)
-	return dead
+# --- MORT ET VICTOIRE ---
 
-# Fonction principale pour tuer un joueur
 @rpc("any_peer", "call_local", "reliable")
-func request_kill_player(target_player_id: int) -> void:
-	if not get_tree().get_multiplayer().is_server():
-		return
+func request_kill_player(target_id: int) -> void:
+	if not multiplayer.is_server(): return
+	if not players.has(target_id) or is_player_dead(target_id): return
 	
-	var killer_id: int = multiplayer.get_remote_sender_id()
-	if killer_id == 0:
-		killer_id = multiplayer.get_unique_id()
+	var scene = get_game_scene()
+	if not scene: return
 	
-	# Vérifications de sécurité
-	if not players.has(target_player_id):
-		print("Erreur: Joueur cible %d n'existe pas" % target_player_id)
-		return
+	var victim_node = scene.get_node_or_null("Players/Player_" + str(target_id))
+	var pos = Vector2.ZERO
+	var col = Color.WHITE
+	var is_flipped = false
 	
-	if is_player_dead(target_player_id):
-		print("Erreur: Joueur %d est déjà mort" % target_player_id)
-		return
-	
-	if killer_id == target_player_id:
-		print("Erreur: Un joueur ne peut pas se tuer lui-même")
-		return
-	
-	# Marquer le joueur comme mort
-	players[target_player_id]["is_dead"] = true
-	
-	# Synchroniser avec tous les clients
+	if victim_node:
+		pos = victim_node.global_position
+		col = victim_node.anim.modulate
+		is_flipped = victim_node.anim.flip_h
+		victim_node.rpc("play_death_animation")
+
+	players[target_id]["is_dead"] = true
 	rpc("_sync_lobby_data", players)
 	
-	# Désactiver le joueur dans la scène (jouer l'animation death)
-	rpc("kill_player_in_scene", target_player_id)
+	# Spawn du cadavre
+	scene.rpc("spawn_corpse_on_all", pos, col, is_flipped)
 	
-	print("Joueur %d a été tué par %d" % [target_player_id, killer_id])
+	check_win_condition()
 
-# RPC pour désactiver le joueur dans la scène (remplacer l'ancienne version)
+func check_win_condition():
+	var wolves = 0
+	var villagers = 0
+	for id in players:
+		if not is_player_dead(id):
+			if players[id]["role"] == ROLE_WEREWOLF: wolves += 1
+			else: villagers += 1
+	print("WIN CHECK: Loups=%d, Villageois=%d" % [wolves, villagers])
+	if wolves == 0: rpc("rpc_game_over", "VILLAGEOIS")
+	elif wolves >= villagers: rpc("rpc_game_over", "LOUPS-GAROUS")
+
+@rpc("call_local", "reliable")
+func rpc_game_over(winner: String):
+	print("VICTOIRE : ", winner)
+	game_over.emit(winner)
+
 @rpc("any_peer", "call_local", "reliable")
-func kill_player_in_scene(player_id: int) -> void:
-	var player_node_path = "TestScene/Players/Player_" + str(player_id) 
-	var root = get_tree().get_root()
-	var player_node = root.get_node_or_null(player_node_path) 
-	
-	if player_node:
-		# Appeler la fonction RPC sur le joueur pour jouer l'animation death
-		player_node.rpc("play_death_animation")
-		print("Joueur %d va jouer l'animation death" % player_id)
-	else:
-		push_error("Joueur %d non trouvé dans la scène" % player_id)
+func kill_player_in_scene(pid: int) -> void: pass
+
+func stop_network():
+	if multiplayer.multiplayer_peer:
+		multiplayer.multiplayer_peer.close()
+	multiplayer.multiplayer_peer = null
+	players.clear()
+	is_host = false

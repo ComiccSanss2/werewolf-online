@@ -1,0 +1,7 @@
+[gd_resource type="AudioStreamRandomizer" load_steps=2 format=3 uid="uid://cls4wgolpq37i"]
+
+[ext_resource type="AudioStream" uid="uid://bkv2uxw3l8r1q" path="res://assets/sfx/hidechest.wav" id="1_wm5m3"]
+
+[resource]
+streams_count = 1
+stream_0/stream = ExtResource("1_wm5m3")

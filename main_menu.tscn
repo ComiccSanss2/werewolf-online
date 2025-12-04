@@ -1,10 +1,18 @@
-[gd_scene load_steps=2 format=3 uid="uid://b788f0gr3cjua"]
+[gd_scene load_steps=6 format=3 uid="uid://b788f0gr3cjua"]
 
 [ext_resource type="Script" uid="uid://duo84m76ekvcf" path="res://main_menu.gd" id="1_06t4h"]
+[ext_resource type="Texture2D" uid="uid://dl73ved7l83pe" path="res://assets/HostButton.png" id="2_fu7sn"]
+[ext_resource type="Texture2D" uid="uid://dhj71oarkcisy" path="res://assets/HostButtonHover.png" id="3_jix8l"]
+[ext_resource type="Texture2D" uid="uid://1kr7khwk6u5x" path="res://assets/JoinButton.png" id="4_glbon"]
+[ext_resource type="Texture2D" uid="uid://bdob8yienbpw6" path="res://assets/JoinButtonHover.png" id="5_nlkkf"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
-anchors_preset = 0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_06t4h")
 
 [node name="TitleLabel" type="Label" parent="."]
@@ -15,21 +23,33 @@ offset_right = 508.0
 offset_bottom = 115.0
 text = "LOUPGAROU"
 
-[node name="HostButton" type="Button" parent="."]
-layout_mode = 0
-offset_left = 361.0
-offset_top = 139.0
-offset_right = 550.0
-offset_bottom = 265.0
-text = "HOST"
+[node name="HostButton" type="TextureButton" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = 144.0
+offset_top = -187.0
+offset_right = 144.0
+offset_bottom = 116.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(0.5, 0.5)
+texture_normal = ExtResource("2_fu7sn")
+texture_pressed = ExtResource("3_jix8l")
+texture_hover = ExtResource("3_jix8l")
 
-[node name="JoinButton" type="Button" parent="."]
+[node name="JoinButton" type="TextureButton" parent="."]
 layout_mode = 0
-offset_left = 364.0
-offset_top = 318.0
-offset_right = 544.0
-offset_bottom = 441.0
-text = "JOIN"
+offset_left = 154.0
+offset_top = 304.0
+offset_right = 977.0
+offset_bottom = 607.0
+scale = Vector2(0.5, 0.5)
+texture_normal = ExtResource("4_glbon")
+texture_pressed = ExtResource("5_nlkkf")
+texture_hover = ExtResource("5_nlkkf")
 
 [node name="AddressInput" type="LineEdit" parent="."]
 layout_mode = 0

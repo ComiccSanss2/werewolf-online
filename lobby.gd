@@ -1,7 +1,7 @@
 extends Control
 
 @onready var players_list := $CanvasLayer/PlayersList
-@onready var start_button := $CanvasLayer/ButtonStart
+@onready var start_button: TextureButton = $CanvasLayer/ButtonStart
 @onready var color_picker_panel := $CanvasLayer/ColorPanel
 @onready var color_grid := $CanvasLayer/ColorPanel/GridContainer
 @onready var open_color_btn := $CanvasLayer/ColorButton

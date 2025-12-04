@@ -1,0 +1,56 @@
+[gd_scene load_steps=6 format=3 uid="uid://f7814qfgyrt6"]
+
+[ext_resource type="Script" uid="uid://c5ll0btddcys6" path="res://game_over_screen.gd" id="1_5jf7k"]
+[ext_resource type="FontFile" uid="uid://cjefwub6iqqgd" path="res://assets/fonts/Daydream DEMO.otf" id="2_6gsxj"]
+[ext_resource type="Texture2D" uid="uid://b66leuj6iaug" path="res://assets/MainMenuButton.png" id="3_qfk4e"]
+[ext_resource type="Texture2D" uid="uid://bffr1yapttrf7" path="res://assets/MainMenuHover.png" id="4_wc1od"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_qfk4e"]
+font = ExtResource("2_6gsxj")
+font_size = 50
+font_color = Color(0.9786002, 0.8875144, 0.81747967, 1)
+
+[node name="GameOverScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_5jf7k")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0.16862746, 0.13725491, 1)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -411.5
+offset_top = -186.0
+offset_right = 411.5
+offset_bottom = 186.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+label_settings = SubResource("LabelSettings_qfk4e")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MenuButton" type="TextureButton" parent="VBoxContainer"]
+texture_filter = 1
+layout_mode = 2
+texture_normal = ExtResource("3_qfk4e")
+texture_pressed = ExtResource("4_wc1od")
+texture_hover = ExtResource("4_wc1od")
