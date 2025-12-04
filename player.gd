@@ -10,6 +10,11 @@ var last_move_dir = Vector2.DOWN
 var is_hidden = false
 var is_dead = false
 
+### STUN VARIABLES ###
+var is_stunned = false
+var stun_timer = 0.0
+@onready var stun_visual = $StunVisual 
+
 # Références aux nœuds de la scène
 @onready var anim = $AnimatedSprite2D
 @onready var name_label = $NameLabel
@@ -29,6 +34,8 @@ const KILL_RANGE = 15.0
 const REVIVE_RANGE = 25.0
 const HIDE_DURATION = 10.0
 const HIDE_COOLDOWN = 10.0
+const STUN_RADIUS_ON_EXIT = 60.0 
+const STUN_DURATION = 2.5       
 
 # Timers pour le système de cachette
 var hide_timer = 0.0
@@ -44,14 +51,9 @@ var level_tilemap: TileMap = null
 var last_valid_tile_id: int = 0
 
 # Helpers multiplayer
-func _my_id() -> int:
-	return get_multiplayer_authority()
-
-func _is_authority() -> bool:
-	return is_multiplayer_authority()
-
-func _get_players_root():
-	return get_tree().get_root().get_node_or_null("TestScene/Players")
+func _my_id() -> int: return get_multiplayer_authority()
+func _is_authority() -> bool: return is_multiplayer_authority()
+func _get_players_root(): return get_tree().get_root().get_node_or_null("TestScene/Players")
 
 # Initialisation du joueur
 func _ready() -> void:
@@ -64,10 +66,13 @@ func _ready() -> void:
 	chest_area.area_entered.connect(_on_area_entered, 4)
 	chest_area.area_exited.connect(_on_area_exited, 4)
 	
+	# Initialisation Stun
+	if stun_visual:
+		stun_visual.visible = false
+	
 	_update_visuals()
 	NetworkHandler.lobby_players_updated.connect(func(_p): _update_visuals())
 	
-	# Nettoie les labels pour les clients non-authority
 	if _is_authority():
 		_hide_labels()
 	else:
@@ -91,7 +96,6 @@ func _create_chest_label(color: Color):
 	chest.add_child(label)
 	return label
 
-# Cooldown label (rouge) - affiché après sortie du coffre
 func _show_cooldown_on_chest() -> void:
 	if not cooldown_label: cooldown_label = _create_chest_label(Color.RED)
 	if is_instance_valid(cooldown_label): cooldown_label.text = "%.0fs" % cooldown_timer
@@ -100,7 +104,6 @@ func _remove_cooldown_label() -> void:
 	if cooldown_label and is_instance_valid(cooldown_label): cooldown_label.queue_free()
 	cooldown_label = null
 
-# Hide label (jaune) - affiché pendant la cachette
 func _create_hide_label() -> void:
 	if not hide_label: hide_label = _create_chest_label(Color.YELLOW)
 
@@ -111,7 +114,6 @@ func _remove_hide_label() -> void:
 	if hide_label and is_instance_valid(hide_label): hide_label.queue_free()
 	hide_label = null
 
-# Met à jour le nom et la couleur du joueur
 func _update_visuals() -> void:
 	if not name_label: return
 	var data = NetworkHandler.players.get(_my_id(), {})
@@ -119,31 +121,44 @@ func _update_visuals() -> void:
 	if data.has("role"): text += " (%s)" % data["role"]
 	name_label.text = text
 	var color = data.get("color", Color.WHITE)
-	if is_dead: color.a = 0.5  # Transparent si mort
+	if is_dead: color.a = 0.5 
 	anim.modulate = color
 	name_label.modulate = color
 
 # Boucle principale (authority seulement)
 func _process(delta: float) -> void:
+	# Si on est pas dans l'arbre ou pas de réseau, on arrête
+	if not is_inside_tree() or not multiplayer.has_multiplayer_peer(): return
+	
+	# Gestion du Timer de Stun (LOCAL, pour savoir quand réactiver les contrôles)
+	if is_stunned:
+		stun_timer -= delta
+		if stun_timer <= 0:
+			# Le stun est fini
+			receive_stun(0) # 0 = Stop stun
+	
 	if not _is_authority(): return
 	
-	# Vérifie si mort
-	if NetworkHandler.is_player_dead(_my_id()):
-		is_dead = true
+	if NetworkHandler.is_player_dead(_my_id()): is_dead = true
 	
-	# Les vivants ont accès aux timers et interactions
+	# Si Stunné, on ne peut RIEN faire (ni bouger, ni interagir)
+	if is_stunned:
+		velocity = Vector2.ZERO
+		# On permet quand même de sync l'anim (pour voir le perso idle)
+		rpc("_net_state", global_position, Vector2.ZERO, last_move_dir)
+		_update_animation()
+		return
+
 	if not is_dead:
 		_update_timers(delta)
 		_update_chest_state()
 		_handle_inputs()
 	
-	# Si caché, pas de mouvement
 	if is_hidden:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		return
 
-	# Calcul du mouvement (fantômes et vivants)
 	var input = Vector2(
 		Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left"),
 		Input.get_action_strength("ui_down") - Input.get_action_strength("ui_up")
@@ -151,7 +166,6 @@ func _process(delta: float) -> void:
 	move_dir = input.normalized()
 	if move_dir != Vector2.ZERO: last_move_dir = move_dir
 
-	# Spectateur va plus vite
 	var current_speed = speed * 1.5 if is_dead else speed
 	velocity = move_dir * current_speed
 	move_and_slide()
@@ -161,7 +175,6 @@ func _process(delta: float) -> void:
 	rpc("_net_state", global_position, move_dir, last_move_dir)
 	_update_animation()
 
-# Gère les sons de pas selon le terrain
 func _handle_footsteps():
 	if velocity.length() < 10.0 or not step_timer.is_stopped(): return
 	if not level_tilemap: return
@@ -174,7 +187,6 @@ func _handle_footsteps():
 	var final = -1
 	if id1 in [7]: final = id1
 	else: final = id0
-	
 	if final == -1: final = last_valid_tile_id
 	else: last_valid_tile_id = final
 
@@ -182,7 +194,6 @@ func _handle_footsteps():
 		rpc("play_footstep_rpc", final)
 		step_timer.start()
 
-# RPC: Joue le son de pas
 @rpc("call_local", "unreliable")
 func play_footstep_rpc(tid: int):
 	var s = sfx_wood if tid in [7] else sfx_grass
@@ -190,7 +201,6 @@ func play_footstep_rpc(tid: int):
 	footstep_player.pitch_scale = randf_range(0.9, 1.1)
 	footstep_player.play()
 
-# Met à jour les timers de cachette et cooldown
 func _update_timers(delta: float) -> void:
 	if is_hidden:
 		hide_timer += delta
@@ -204,7 +214,6 @@ func _update_timers(delta: float) -> void:
 			cooldown_timer = 0
 			_remove_cooldown_label()
 
-# Met à jour l'état du coffre (détection, labels)
 func _update_chest_state() -> void:
 	if is_hidden: return
 	var has_chest = chest_area.get_overlapping_areas().any(func(a): return a.has_meta("chest"))
@@ -218,22 +227,26 @@ func _update_chest_state() -> void:
 			_show_cooldown_on_chest()
 			if is_instance_valid(press_space_label): press_space_label.visible = false
 
-# Gère les entrées clavier
 func _handle_inputs() -> void:
 	if Input.is_action_just_pressed("ui_accept"): _try_hide_or_open_chest()
 	if Input.is_action_just_pressed("kill"): _try_kill_nearby_player()
 	if Input.is_action_just_pressed("revive"): _try_revive_nearby_player()
 
-# Trouve le coffre dans la zone de détection
 func _find_chest_area():
 	for area in chest_area.get_overlapping_areas():
 		if area.has_meta("chest"): return area
 	return null
 
-# Gère entrée/sortie de coffre
 func _try_hide_or_open_chest():
+	# Si on est caché et qu'on sort :
 	if is_hidden:
 		NetworkHandler.rpc_id(1, "request_player_hide_state", false, Vector2.ZERO)
+		
+		### STUN BURST : On sort du coffre violemment ! ###
+		# On demande au serveur de stun les gens autour de nous
+		NetworkHandler.rpc_id(1, "request_area_stun", global_position, STUN_RADIUS_ON_EXIT, STUN_DURATION, _my_id())
+		##################################################
+		
 		cooldown_timer = HIDE_COOLDOWN
 		can_hide = false
 		hide_timer = 0
@@ -248,11 +261,25 @@ func _try_hide_or_open_chest():
 		hide_timer = 0
 		_create_hide_label()
 
-# RPC: Synchronise l'état visible (caché/visible) du joueur
+### FONCTION POUR RECEVOIR LE STUN (Appelée par NetworkHandler) ###
+func receive_stun(duration: float):
+	if duration > 0:
+		is_stunned = true
+		stun_timer = duration
+		if stun_visual:
+			stun_visual.visible = true
+			stun_visual.play("default")
+	else:
+		is_stunned = false
+		stun_timer = 0
+		if stun_visual:
+			stun_visual.visible = false
+			stun_visual.stop()
+#################################################################
+
 @rpc("any_peer", "call_local", "unreliable")
 func sync_player_visual_state(new_state: bool):
 	is_hidden = new_state
-	
 	if chest_audio_player:
 		chest_audio_player.pitch_scale = randf_range(0.9, 1.1)
 		chest_audio_player.play()
@@ -260,6 +287,9 @@ func sync_player_visual_state(new_state: bool):
 	if is_instance_valid(anim): anim.visible = not new_state
 	if is_instance_valid(name_label): name_label.visible = not new_state
 	if is_instance_valid(collision_shape): collision_shape.disabled = new_state
+	
+	# Si on se cache, on cache aussi le visuel de stun au cas où
+	if stun_visual and new_state: stun_visual.visible = false
 	
 	if new_state:
 		if _is_authority(): _hide_labels()
@@ -274,7 +304,6 @@ func sync_player_visual_state(new_state: bool):
 				is_in_chest = false
 		_update_animation()
 
-# RPC: Met à jour l'UI du coffre (occupé ou non)
 @rpc("reliable")
 func update_chest_ui(is_occupied: bool):
 	if not _is_authority() or is_hidden or not is_in_chest:
@@ -283,7 +312,6 @@ func update_chest_ui(is_occupied: bool):
 	if is_instance_valid(press_space_label): press_space_label.visible = not is_occupied
 	if is_instance_valid(is_occupied_label): is_occupied_label.visible = is_occupied
 
-# RPC: Synchronise la position et l'animation
 @rpc("any_peer", "call_local", "unreliable")
 func _net_state(pos: Vector2, dir: Vector2, last_dir: Vector2) -> void:
 	if _is_authority() or is_dead: return
@@ -292,10 +320,9 @@ func _net_state(pos: Vector2, dir: Vector2, last_dir: Vector2) -> void:
 	last_move_dir = last_dir
 	if not is_hidden: _update_animation()
 
-# Met à jour l'animation en fonction de la direction
 func _update_animation() -> void:
 	if is_dead:
-		anim.stop()  # Spectateur sans animation
+		anim.stop()
 		return
 	
 	var dir = move_dir if move_dir != Vector2.ZERO else last_move_dir
@@ -304,18 +331,15 @@ func _update_animation() -> void:
 	anim.play(prefix + suffix)
 	anim.flip_h = dir.x < 0
 
-# Signal: entrée dans la zone du coffre
 func _on_area_entered(area: Area2D) -> void:
 	if not _is_authority() or not area.has_meta("chest"): return
 	is_in_chest = true
 	if not is_hidden and is_instance_valid(press_space_label): press_space_label.visible = true
 	NetworkHandler.rpc_id(1, "request_chest_occupancy_state", area.global_position)
 
-# Signal: sortie de la zone du coffre
 func _on_area_exited(area: Area2D) -> void:
 	if _is_authority() and area.has_meta("chest"): is_in_chest = false
 
-# Trouve un joueur proche selon critères
 func _find_nearby_player(max_range: float, must_be_dead: bool):
 	var players_root = _get_players_root()
 	if not players_root: return null
@@ -329,7 +353,6 @@ func _find_nearby_player(max_range: float, must_be_dead: bool):
 			return target_id
 	return null
 
-# Helper pour action sur joueur proche (kill/revive)
 func _try_action_on_nearby(action: String, max_range: float, target_dead: bool, role_check: Callable):
 	if NetworkHandler.is_player_dead(_my_id()) or not role_check.call(_my_id()): return
 	var target = _find_nearby_player(max_range, target_dead)
@@ -341,22 +364,23 @@ func _try_kill_nearby_player() -> void:
 func _try_revive_nearby_player() -> void:
 	_try_action_on_nearby("request_revive_player", REVIVE_RANGE, true, NetworkHandler.is_sorciere)
 
-# RPC: Joue l'animation de mort
 @rpc("any_peer", "call_local", "reliable")
 func play_death_animation() -> void:
 	is_dead = true
+	# Si on meurt stunné, on annule le stun
+	receive_stun(0)
+	
 	collision_shape.set_deferred("disabled", true)
 	chest_area.monitoring = false
 	_hide_labels()
 	
 	if _is_authority():
-		anim.modulate.a = 0.5  # Transparent pour soi-même
+		anim.modulate.a = 0.5
 		anim.visible = true
 	else:
-		anim.visible = false  # Invisible pour les autres
+		anim.visible = false
 		name_label.visible = false
 
-# RPC: Ressuscite le joueur
 @rpc("any_peer", "call_local", "reliable")
 func revive_character() -> void:
 	is_dead = false

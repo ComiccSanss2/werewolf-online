@@ -340,6 +340,45 @@ func request_revive_player(target_id: int) -> void:
 func revive_player_in_scene(player_id: int) -> void:
 	var player = _get_player_node(player_id)
 	if player: player.rpc("revive_character")
+	
+	
+	# ========== SYSTÈME DE STUN ==========
+
+# RPC: Demande d'étourdir les joueurs dans une zone
+@rpc("any_peer", "call_local", "reliable")
+func request_area_stun(center_pos: Vector2, radius: float, duration: float, ignore_player_id: int):
+	if not multiplayer.is_server(): return
+	
+	var scene = get_game_scene()
+	if not scene: return
+	var players_node = scene.get_node_or_null("Players")
+	if not players_node: return
+	
+	# On parcourt tous les joueurs
+	for player in players_node.get_children():
+		var pid = player.get_multiplayer_authority()
+		
+		# On ne s'auto-stun pas
+		if pid == ignore_player_id: continue
+		
+		# On ne stun pas les morts
+		if is_player_dead(pid): continue
+		
+		# Vérification de la distance
+		if player.global_position.distance_to(center_pos) <= radius:
+			# On applique le stun sur ce joueur spécifique
+			rpc("apply_stun_to_player", pid, duration)
+
+# RPC: Applique le stun sur un joueur spécifique (Exécuté par le serveur vers tout le monde)
+@rpc("call_local", "reliable")
+func apply_stun_to_player(target_id: int, duration: float):
+	var player = _get_player_node(target_id)
+	if player:
+		# On appelle la fonction de stun locale du joueur
+		player.receive_stun(duration)
+	
+	
+	
 
 # ========== Système de victoire ==========
 

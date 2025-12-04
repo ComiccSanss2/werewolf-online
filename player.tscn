@@ -1,8 +1,31 @@
-[gd_scene load_steps=7 format=3 uid="uid://yscgsx5lmjcl"]
+[gd_scene load_steps=11 format=3 uid="uid://yscgsx5lmjcl"]
 
 [ext_resource type="Script" uid="uid://bok8xx2xd78ek" path="res://player.gd" id="1_4flbx"]
 [ext_resource type="SpriteFrames" uid="uid://dg662mg2wndr5" path="res://player_frames.tres" id="2_i3pqv"]
+[ext_resource type="Texture2D" uid="uid://b8fenhq7841n2" path="res://assets/stun.png" id="3_hqtel"]
 [ext_resource type="AudioStream" uid="uid://bkv2uxw3l8r1q" path="res://assets/sfx/hidechest.wav" id="5_sweqy"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sweqy"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(0, 0, 16, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2hs0m"]
+atlas = ExtResource("3_hqtel")
+region = Rect2(0, 16, 16, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_1jxqw"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sweqy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2hs0m")
+}],
+"loop": true,
+"name": &"default",
+"speed": 2.0
+}]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bwjto"]
 size = Vector2(11.5, 7)
@@ -19,9 +42,15 @@ script = ExtResource("1_4flbx")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
 sprite_frames = ExtResource("2_i3pqv")
-animation = &"death"
-frame = 5
-frame_progress = 1.0
+animation = &"idle-down"
+
+[node name="StunVisual" type="AnimatedSprite2D" parent="."]
+visible = false
+z_index = 2
+texture_filter = 1
+position = Vector2(0, -15)
+sprite_frames = SubResource("SpriteFrames_1jxqw")
+frame_progress = 0.98702174
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 z_index = 16
@@ -29,7 +58,7 @@ position = Vector2(-0.25, 0.5)
 shape = SubResource("RectangleShape2D_bwjto")
 
 [node name="Camera2D" type="Camera2D" parent="."]
-zoom = Vector2(13, 13)
+zoom = Vector2(11, 11)
 
 [node name="NameLabel" type="Label" parent="."]
 offset_left = -6.0
