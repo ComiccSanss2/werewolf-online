@@ -329,9 +329,9 @@ func rpc_voting_completed(_elim_id: int, tie: bool, player_name: String):
 	
 	if announcement_label:
 		if tie:
-			announcement_label.text = "ÉGALITÉ - Personne n'est éliminé"
+			announcement_label.text = "DRAW - NO ONE HAS BEEN ELIMINATED"
 		elif _elim_id != -1:
-			announcement_label.text = "%s a été éliminé !" % player_name
+			announcement_label.text = "%s GOT ELIMINATED !" % player_name
 		announcement_label.visible = true
 
 # ========== Gestion fin de partie ==========
