@@ -127,24 +127,23 @@ func _update_visuals() -> void:
 func _process(delta: float) -> void:
 	if not _is_authority(): return
 	
-	# Si mort, on ne fait rien (mode spectateur)
-	if is_dead or NetworkHandler.is_player_dead(_my_id()):
+	# Vérifie si mort
+	if NetworkHandler.is_player_dead(_my_id()):
 		is_dead = true
-		velocity = Vector2.ZERO
-		move_and_slide()
-		return
-
-	_update_timers(delta)
-	_update_chest_state()
-	_handle_inputs()
-
+	
+	# Les vivants ont accès aux timers et interactions
+	if not is_dead:
+		_update_timers(delta)
+		_update_chest_state()
+		_handle_inputs()
+	
 	# Si caché, pas de mouvement
 	if is_hidden:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		return
 
-	# Calcul du mouvement
+	# Calcul du mouvement (fantômes et vivants)
 	var input = Vector2(
 		Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left"),
 		Input.get_action_strength("ui_down") - Input.get_action_strength("ui_up")
@@ -331,9 +330,9 @@ func _find_nearby_player(max_range: float, must_be_dead: bool):
 	return null
 
 # Helper pour action sur joueur proche (kill/revive)
-func _try_action_on_nearby(action: String, range: float, target_dead: bool, role_check: Callable):
+func _try_action_on_nearby(action: String, max_range: float, target_dead: bool, role_check: Callable):
 	if NetworkHandler.is_player_dead(_my_id()) or not role_check.call(_my_id()): return
-	var target = _find_nearby_player(range, target_dead)
+	var target = _find_nearby_player(max_range, target_dead)
 	if target != null: NetworkHandler.rpc_id(1, action, target)
 
 func _try_kill_nearby_player() -> void:
@@ -346,8 +345,6 @@ func _try_revive_nearby_player() -> void:
 @rpc("any_peer", "call_local", "reliable")
 func play_death_animation() -> void:
 	is_dead = true
-	velocity = Vector2.ZERO
-	move_dir = Vector2.ZERO
 	collision_shape.set_deferred("disabled", true)
 	chest_area.monitoring = false
 	_hide_labels()

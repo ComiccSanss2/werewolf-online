@@ -239,7 +239,7 @@ func get_dead_players() -> Array:
 
 # ========== Actions kill/revive ==========
 
-# RPC: Demande de tuer un joueur
+# RPC: Demande de tuer un joueur (chaque loup peut tuer individuellement)
 @rpc("any_peer", "call_local", "reliable")
 func request_kill_player(target_id: int) -> void:
 	if not multiplayer.is_server(): return
@@ -250,6 +250,8 @@ func request_kill_player(target_id: int) -> void:
 	if not players.has(killer_id) or not players.has(target_id): return
 	if not is_werewolf(killer_id) or is_player_dead(killer_id): return
 	if is_player_dead(target_id): return
+	
+	# Vérifie que CE loup n'a pas déjà tué cette nuit
 	if players[killer_id].get("has_killed", false): return
 	
 	var scene = get_game_scene()
