@@ -1,21 +1,17 @@
 extends CharacterBody2D
 
-# Vitesse de déplacement du joueur
 @export var speed = 75.0
 
-# États du joueur
 var is_in_chest = false
 var move_dir = Vector2.ZERO
 var last_move_dir = Vector2.DOWN
 var is_hidden = false
 var is_dead = false
 
-### STUN VARIABLES ###
 var is_stunned = false
 var stun_timer = 0.0
 @onready var stun_visual = $StunVisual 
 
-# Références aux nœuds de la scène
 @onready var anim = $AnimatedSprite2D
 @onready var name_label = $NameLabel
 @onready var camera = $Camera2D
@@ -24,43 +20,36 @@ var stun_timer = 0.0
 @onready var press_space_label = $PressSpaceLabel
 @onready var is_occupied_label = $IsOccupiedLabel
 
-# Audio
 @onready var footstep_player: AudioStreamPlayer2D = $FootstepPlayer
 @onready var chest_audio_player: AudioStreamPlayer2D = $ChestAudioPlayer
 @onready var step_timer: Timer = $StepTimer
 
-# Constantes de gameplay
 const KILL_RANGE = 15.0
 const REVIVE_RANGE = 25.0
 const HIDE_DURATION = 10.0
 const HIDE_COOLDOWN = 10.0
-const REPORT_RANGE = 30.0
+# Augmentation de la distance de report pour faciliter l'action
+const REPORT_RANGE = 60.0 
 const STUN_RADIUS_ON_EXIT = 60.0 
-const STUN_DURATION = 2.5       
+const STUN_DURATION = 2.5        
 
-# Timers pour le système de cachette
 var hide_timer = 0.0
 var cooldown_timer = 0.0
 var can_hide = true
 var cooldown_label: Label
 var hide_label: Label
 
-# Système de report
-var report_label: Label
 var nearby_corpse = false
 
-# Audio footsteps
 var sfx_grass = preload("res://sfx_grass.tres")
 var sfx_wood = preload("res://sfx_wood.tres")
 var level_tilemap: TileMap = null
 var last_valid_tile_id: int = 0
 
-# Helpers multiplayer
 func _my_id() -> int: return get_multiplayer_authority()
 func _is_authority() -> bool: return is_multiplayer_authority()
 func _get_players_root(): return get_tree().get_root().get_node_or_null("TestScene/Players")
 
-# Initialisation du joueur
 func _ready() -> void:
 	if not get_tree().get_multiplayer().has_multiplayer_peer():
 		set_process_mode(PROCESS_MODE_DISABLED)
@@ -71,9 +60,7 @@ func _ready() -> void:
 	chest_area.area_entered.connect(_on_area_entered, 4)
 	chest_area.area_exited.connect(_on_area_exited, 4)
 	
-	# Initialisation Stun
-	if stun_visual:
-		stun_visual.visible = false
+	if stun_visual: stun_visual.visible = false
 	
 	_update_visuals()
 	NetworkHandler.lobby_players_updated.connect(func(_p): _update_visuals())
@@ -84,7 +71,6 @@ func _ready() -> void:
 		if press_space_label: press_space_label.queue_free()
 		if is_occupied_label: is_occupied_label.queue_free()
 
-# Gestion des labels UI
 func _hide_labels() -> void:
 	if is_instance_valid(press_space_label): press_space_label.visible = false
 	if is_instance_valid(is_occupied_label): is_occupied_label.visible = false
@@ -95,9 +81,14 @@ func _create_chest_label(color: Color):
 	var label = Label.new()
 	label.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	label.scale = Vector2(0.5, 0.5)
-	label.add_theme_color_override("font_color", color)
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	label.position = Vector2(-8, -20)
+	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	label.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	label.anchors_preset = Control.PRESET_CENTER_TOP
+	label.position = Vector2(0, -30)
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 4)
 	chest.add_child(label)
 	return label
 
@@ -119,29 +110,21 @@ func _remove_hide_label() -> void:
 	if hide_label and is_instance_valid(hide_label): hide_label.queue_free()
 	hide_label = null
 
-# Affiche le label de report près d'un cadavre
+# --- REPORT ---
 func _show_report_label() -> void:
-	if report_label: return
-	report_label = Label.new()
-	report_label.text = "Appuyer [T] pour reporter"
-	report_label.position = Vector2(-80, -60)
-	report_label.add_theme_font_size_override("font_size", 12)
-	report_label.add_theme_color_override("font_color", Color.RED)
-	report_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	report_label.add_theme_constant_override("outline_size", 4)
-	report_label.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	add_child(report_label)
+	var scene = get_tree().get_root().get_node_or_null("TestScene")
+	if scene and scene.has_method("set_report_label_visible"):
+		scene.set_report_label_visible(true)
 
 func _remove_report_label() -> void:
-	if report_label and is_instance_valid(report_label): report_label.queue_free()
-	report_label = null
+	var scene = get_tree().get_root().get_node_or_null("TestScene")
+	if scene and scene.has_method("set_report_label_visible"):
+		scene.set_report_label_visible(false)
 
-# Tente de reporter un corps
 func _try_report_body() -> void:
 	if not nearby_corpse or is_dead: return
 	rpc_id(1, "report_body_to_server")
 
-# RPC: Envoie le report au serveur
 @rpc("any_peer", "call_local", "reliable")
 func report_body_to_server():
 	if not multiplayer.is_server(): return
@@ -153,7 +136,6 @@ func _update_visuals() -> void:
 	if not name_label: return
 	var data = NetworkHandler.players.get(_my_id(), {})
 	var text = data.get("name", "Player %s" % _my_id())
-	# Affiche le rôle seulement si c'est notre propre joueur
 	if _is_authority() and data.has("role"): 
 		text += " (%s)" % data["role"]
 	name_label.text = text
@@ -162,26 +144,26 @@ func _update_visuals() -> void:
 	anim.modulate = color
 	name_label.modulate = color
 
-# Boucle principale (authority seulement)
 func _process(delta: float) -> void:
-	# Si on est pas dans l'arbre ou pas de réseau, on arrête
 	if not is_inside_tree() or not multiplayer.has_multiplayer_peer(): return
 	
-	# Gestion du Timer de Stun (LOCAL, pour savoir quand réactiver les contrôles)
 	if is_stunned:
 		stun_timer -= delta
-		if stun_timer <= 0:
-			# Le stun est fini
-			receive_stun(0) # 0 = Stop stun
+		if stun_timer <= 0: receive_stun(0)
 	
 	if not _is_authority(): return
 	
+	# BLOQUAGE GAMEPLAY SI INTERMISSION/VOTE/FIN
+	if not NetworkHandler.is_gameplay_active:
+		velocity = Vector2.ZERO
+		rpc("_net_state", global_position, Vector2.ZERO, last_move_dir)
+		_update_animation()
+		return
+	
 	if NetworkHandler.is_player_dead(_my_id()): is_dead = true
 	
-	# Si Stunné, on ne peut RIEN faire (ni bouger, ni interagir)
 	if is_stunned:
 		velocity = Vector2.ZERO
-		# On permet quand même de sync l'anim (pour voir le perso idle)
 		rpc("_net_state", global_position, Vector2.ZERO, last_move_dir)
 		_update_animation()
 		return
@@ -191,6 +173,10 @@ func _process(delta: float) -> void:
 		_update_chest_state()
 		_update_corpse_state()
 		_handle_inputs()
+	else:
+		if nearby_corpse:
+			nearby_corpse = false
+			_remove_report_label()
 	
 	if is_hidden:
 		velocity = Vector2.ZERO
@@ -261,19 +247,14 @@ func _update_chest_state() -> void:
 		_remove_cooldown_label()
 	elif has_chest:
 		is_in_chest = true
-		if not can_hide:
-			_show_cooldown_on_chest()
-		# Demande l'état d'occupation au serveur
+		if not can_hide: _show_cooldown_on_chest()
 		var chest = _find_chest_area()
-		if chest:
-			NetworkHandler.rpc_id(1, "request_chest_occupancy_state", chest.global_position)
+		if chest: NetworkHandler.rpc_id(1, "request_chest_occupancy_state", chest.global_position)
 		if is_instance_valid(press_space_label): press_space_label.visible = false
 
-# Vérifie la proximité des cadavres
 func _update_corpse_state() -> void:
 	var scene = get_tree().get_root().get_node_or_null("TestScene")
 	if not scene: return
-	
 	var bodies = scene.get_node_or_null("DeadBodies")
 	if not bodies: return
 	
@@ -291,6 +272,7 @@ func _update_corpse_state() -> void:
 		_remove_report_label()
 
 func _handle_inputs() -> void:
+	if not NetworkHandler.is_gameplay_active: return
 	if Input.is_action_just_pressed("ui_accept"): _try_hide_or_open_chest()
 	if Input.is_action_just_pressed("kill"): _try_kill_nearby_player()
 	if Input.is_action_just_pressed("revive"): _try_revive_nearby_player()
@@ -302,15 +284,9 @@ func _find_chest_area():
 	return null
 
 func _try_hide_or_open_chest():
-	# Si on est caché et qu'on sort :
 	if is_hidden:
 		NetworkHandler.rpc_id(1, "request_player_hide_state", false, Vector2.ZERO)
-		
-		### STUN BURST : On sort du coffre violemment ! ###
-		# On demande au serveur de stun les gens autour de nous
 		NetworkHandler.rpc_id(1, "request_area_stun", global_position, STUN_RADIUS_ON_EXIT, STUN_DURATION, _my_id())
-		##################################################
-		
 		cooldown_timer = HIDE_COOLDOWN
 		can_hide = false
 		hide_timer = 0
@@ -325,7 +301,6 @@ func _try_hide_or_open_chest():
 		hide_timer = 0
 		_create_hide_label()
 
-### FONCTION POUR RECEVOIR LE STUN (Appelée par NetworkHandler) ###
 func receive_stun(duration: float):
 	if duration > 0:
 		is_stunned = true
@@ -339,7 +314,6 @@ func receive_stun(duration: float):
 		if stun_visual:
 			stun_visual.visible = false
 			stun_visual.stop()
-#################################################################
 
 @rpc("any_peer", "call_local", "unreliable")
 func sync_player_visual_state(new_state: bool):
@@ -352,7 +326,6 @@ func sync_player_visual_state(new_state: bool):
 	if is_instance_valid(name_label): name_label.visible = not new_state
 	if is_instance_valid(collision_shape): collision_shape.disabled = new_state
 	
-	# Si on se cache, on cache aussi le visuel de stun au cas où
 	if stun_visual and new_state: stun_visual.visible = false
 	
 	if new_state:
@@ -431,9 +404,7 @@ func _try_revive_nearby_player() -> void:
 @rpc("any_peer", "call_local", "reliable")
 func play_death_animation() -> void:
 	is_dead = true
-	# Si on meurt stunné, on annule le stun
 	receive_stun(0)
-	
 	collision_shape.set_deferred("disabled", true)
 	chest_area.monitoring = false
 	_hide_labels()
@@ -454,3 +425,14 @@ func revive_character() -> void:
 	anim.visible = true
 	name_label.visible = true
 	anim.play("idle-down")
+	
+	
+
+# RPC: Force la position du joueur (appelé par le serveur après un vote)
+@rpc("call_local", "reliable")
+func force_teleport(new_pos: Vector2):
+	global_position = new_pos
+	velocity = Vector2.ZERO
+	move_dir = Vector2.ZERO
+	if is_multiplayer_authority():
+		rpc("_net_state", new_pos, Vector2.ZERO, last_move_dir)

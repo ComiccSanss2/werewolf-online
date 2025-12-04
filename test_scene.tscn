@@ -1,4 +1,4 @@
-[gd_scene load_steps=33 format=3 uid="uid://bwn5wql4y1s1f"]
+[gd_scene load_steps=36 format=3 uid="uid://bwn5wql4y1s1f"]
 
 [ext_resource type="Script" uid="uid://cfoycnkuxps4n" path="res://test_scene.gd" id="1_uhqqe"]
 [ext_resource type="Script" uid="uid://d3w5otoficip0" path="res://chest_interactions.gd" id="2_0k8yu"]
@@ -16,6 +16,7 @@
 [ext_resource type="Texture2D" uid="uid://bwk5im78hnsv2" path="res://assets/Cute_Fantasy_Free/Tiles/Water_Tile.png" id="10_oo8pe"]
 [ext_resource type="Texture2D" uid="uid://bedgx3d4v75a1" path="res://assets/Cute_Fantasy_Free/Outdoor decoration/Fences.png" id="11_rpuu0"]
 [ext_resource type="Texture2D" uid="uid://k7xwkhpijmj5" path="res://assets/light.png" id="12_oo8pe"]
+[ext_resource type="FontFile" uid="uid://cjefwub6iqqgd" path="res://assets/fonts/Daydream DEMO.otf" id="16_2dw41"]
 [ext_resource type="PackedScene" uid="uid://f7814qfgyrt6" path="res://GameOverUI.tscn" id="17_k6its"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_sasra"]
@@ -443,8 +444,20 @@ sources/11 = SubResource("TileSetAtlasSource_k6its")
 
 [sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_0k8yu"]
 
+[sub_resource type="LabelSettings" id="LabelSettings_ykxp3"]
+font = ExtResource("16_2dw41")
+font_size = 17
+font_color = Color(0.99799806, 0.9179344, 0.60763186, 1)
+
 [sub_resource type="LabelSettings" id="LabelSettings_hiucn"]
 font_size = 32
+
+[sub_resource type="LabelSettings" id="LabelSettings_2dw41"]
+font = ExtResource("16_2dw41")
+font_size = 27
+font_color = Color(1, 0.40955335, 0.34002635, 1)
+outline_size = 4
+outline_color = Color(0, 0, 0, 1)
 
 [node name="TestScene" type="Node2D"]
 script = ExtResource("1_uhqqe")
@@ -453,16 +466,28 @@ script = ExtResource("1_uhqqe")
 position = Vector2(18, -88)
 
 [node name="Spawn1" type="Marker2D" parent="SpawnPoints"]
-position = Vector2(270, 288)
+position = Vector2(83, -2)
 
 [node name="Spawn2" type="Marker2D" parent="SpawnPoints"]
-position = Vector2(333, 288)
+position = Vector2(183, 287)
 
 [node name="Spawn3" type="Marker2D" parent="SpawnPoints"]
-position = Vector2(271, 351)
+position = Vector2(812, 288)
 
 [node name="Spawn4" type="Marker2D" parent="SpawnPoints"]
-position = Vector2(334, 351)
+position = Vector2(815, 79)
+
+[node name="Spawn5" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(498, 292)
+
+[node name="Spawn6" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(400, 78)
+
+[node name="Spawn7" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(167, -35)
+
+[node name="Spawn8" type="Marker2D" parent="SpawnPoints"]
+position = Vector2(517, 167)
 
 [node name="DeadBodies" type="Node2D" parent="."]
 texture_filter = 1
@@ -574,6 +599,20 @@ blend_mode = 2
 
 [node name="UI_Layer" type="CanvasLayer" parent="."]
 
+[node name="AnnouncementLabel" type="Label" parent="UI_Layer"]
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -412.0
+offset_top = -13.0
+offset_right = -71.0
+offset_bottom = 23.0
+grow_horizontal = 0
+grow_vertical = 2
+label_settings = SubResource("LabelSettings_ykxp3")
+
 [node name="VotingScreen" parent="UI_Layer" instance=ExtResource("2_hiucn")]
 visible = false
 
@@ -587,3 +626,18 @@ label_settings = SubResource("LabelSettings_hiucn")
 
 [node name="GameOverScreen" parent="UI_Layer" instance=ExtResource("17_k6its")]
 visible = false
+
+[node name="ReportLabel" type="Label" parent="UI_Layer"]
+visible = false
+texture_filter = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -116.0
+offset_top = 34.0
+offset_right = 116.0
+offset_bottom = 57.0
+grow_horizontal = 2
+text = "Appuyer [T] pour reporter"
+label_settings = SubResource("LabelSettings_2dw41")
+horizontal_alignment = 1

@@ -5,7 +5,11 @@ extends Node
 # Variables globales
 var nickname = "Player"
 var is_host = false
-var players = {}  # { id: { name, color, role, is_dead, has_revived } }
+var players = {}  # { id: { name, color, role, is_dead, has_revived, has_killed } }
+
+# --- VARIABLE MANQUANTE AJOUTÉE ICI ---
+var is_gameplay_active: bool = false
+# --------------------------------------
 
 # Signaux pour communiquer avec l'UI
 signal lobby_players_updated(players)
@@ -53,9 +57,12 @@ func join(ip: String, port: int = DEFAULT_PORT) -> void:
 
 # Configure les signaux réseau
 func _setup_signals() -> void:
-	multiplayer.peer_connected.connect(_on_peer_connected)
-	multiplayer.peer_disconnected.connect(_on_peer_disconnected)
-	multiplayer.connection_failed.connect(func(): connection_failed_ui.emit())
+	if not multiplayer.peer_connected.is_connected(_on_peer_connected):
+		multiplayer.peer_connected.connect(_on_peer_connected)
+	if not multiplayer.peer_disconnected.is_connected(_on_peer_disconnected):
+		multiplayer.peer_disconnected.connect(_on_peer_disconnected)
+	if not multiplayer.connection_failed.is_connected(func(): connection_failed_ui.emit()):
+		multiplayer.connection_failed.connect(func(): connection_failed_ui.emit())
 
 # ========== Gestion des joueurs ==========
 
@@ -123,25 +130,35 @@ func _on_peer_disconnected(id: int) -> void:
 # ========== Attribution des rôles ==========
 
 # Assigne aléatoirement les rôles aux joueurs
+# Assigne aléatoirement les rôles aux joueurs
 func _assign_roles() -> void:
 	if not is_host: return
 	
-	var player_ids = players.keys()
-	var n = player_ids.size()
+	var ids = players.keys()
+	var n = ids.size()
+	
+	# Il faut au moins 2 joueurs pour lancer une partie
 	if n < 2: return
 	
-	var num_werewolves = 1 if n <= 4 else 2
-	var shuffled = player_ids.duplicate()
+	var num_wolves = 1
+	
+	if n > 8:
+		num_wolves = 2
+	
+	var shuffled = ids.duplicate()
 	shuffled.shuffle()
 	
-	for i in shuffled.size():
+	for i in range(shuffled.size()):
 		var pid = shuffled[i]
-		if i < num_werewolves:
+		
+		if i < num_wolves:
 			players[pid]["role"] = ROLE_WEREWOLF
 			players[pid]["has_killed"] = false
-		elif i == num_werewolves and n >= 3:
+			
+		elif i == num_wolves and n >= 3:
 			players[pid]["role"] = ROLE_SORCIERE
 			players[pid]["has_revived"] = false
+			
 		else:
 			players[pid]["role"] = ROLE_VILLAGEOIS
 	
@@ -278,12 +295,6 @@ func request_kill_player(target_id: int) -> void:
 	
 	check_win_condition()
 
-# RPC: Tue un joueur dans la scène (legacy, utilisé par check_win)
-@rpc("any_peer", "call_local", "reliable")
-func kill_player_in_scene(player_id: int) -> void:
-	var player = _get_player_node(player_id)
-	if player: player.rpc("play_death_animation")
-
 # Élimine un joueur par vote (sans vérification de rôle)
 func eliminate_player_by_vote(target_id: int) -> void:
 	if not multiplayer.is_server(): return
@@ -335,14 +346,12 @@ func request_revive_player(target_id: int) -> void:
 		rpc("revive_player_in_scene", target_id)
 		scene.rpc("remove_corpse_on_all", target_id, revive_pos)
 
-# RPC: Ressuscite un joueur dans la scène
 @rpc("any_peer", "call_local", "reliable")
 func revive_player_in_scene(player_id: int) -> void:
 	var player = _get_player_node(player_id)
 	if player: player.rpc("revive_character")
-	
-	
-	# ========== SYSTÈME DE STUN ==========
+
+# ========== SYSTÈME DE STUN (Intégré) ==========
 
 # RPC: Demande d'étourdir les joueurs dans une zone
 @rpc("any_peer", "call_local", "reliable")
@@ -354,31 +363,20 @@ func request_area_stun(center_pos: Vector2, radius: float, duration: float, igno
 	var players_node = scene.get_node_or_null("Players")
 	if not players_node: return
 	
-	# On parcourt tous les joueurs
 	for player in players_node.get_children():
 		var pid = player.get_multiplayer_authority()
-		
-		# On ne s'auto-stun pas
 		if pid == ignore_player_id: continue
-		
-		# On ne stun pas les morts
 		if is_player_dead(pid): continue
 		
-		# Vérification de la distance
 		if player.global_position.distance_to(center_pos) <= radius:
-			# On applique le stun sur ce joueur spécifique
 			rpc("apply_stun_to_player", pid, duration)
 
-# RPC: Applique le stun sur un joueur spécifique (Exécuté par le serveur vers tout le monde)
+# RPC: Applique le stun sur un joueur spécifique
 @rpc("call_local", "reliable")
 func apply_stun_to_player(target_id: int, duration: float):
 	var player = _get_player_node(target_id)
 	if player:
-		# On appelle la fonction de stun locale du joueur
 		player.receive_stun(duration)
-	
-	
-	
 
 # ========== Système de victoire ==========
 
