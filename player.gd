@@ -123,6 +123,8 @@ func _remove_report_label() -> void:
 
 func _try_report_body() -> void:
 	if not nearby_corpse or is_dead: return
+	var scene = get_tree().get_root().get_node_or_null("TestScene")
+	if scene and not scene.can_report: return  # Vérifie si les reports sont activés
 	rpc_id(1, "report_body_to_server")
 
 @rpc("any_peer", "call_local", "reliable")
