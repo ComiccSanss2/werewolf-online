@@ -26,6 +26,7 @@ const VOTE_DURATION = 60.0   # 1 minute
 # Variables de jeu
 var current_votes: Dictionary = {}
 var is_voting_phase: bool = false
+var announcement_label: Label
 
 # ========== Initialisation ==========
 
@@ -41,6 +42,9 @@ func _ready() -> void:
 	# Connexion au signal game_over
 	if not NetworkHandler.game_over.is_connected(_on_game_over):
 		NetworkHandler.game_over.connect(_on_game_over)
+	
+	# Création du label d'annonce
+	_create_announcement_label()
 	
 	# Configuration de l'UI
 	voting_ui.visible = false
@@ -86,6 +90,20 @@ func _process(_delta: float) -> void:
 			if t < 10: col = Color.RED
 	
 	timer_label.modulate = col
+
+# Crée le label d'annonce pour les résultats de vote
+func _create_announcement_label():
+	announcement_label = Label.new()
+	announcement_label.position = Vector2(576, 300)
+	announcement_label.anchor_left = 0.5
+	announcement_label.anchor_right = 0.5
+	announcement_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	announcement_label.add_theme_font_size_override("font_size", 32)
+	announcement_label.add_theme_color_override("font_color", Color.WHITE)
+	announcement_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	announcement_label.add_theme_constant_override("outline_size", 8)
+	announcement_label.visible = false
+	ui_layer.add_child(announcement_label)
 
 # ========== Gestion des timers ==========
 
@@ -185,10 +203,13 @@ func _resolve_voting_results():
 	
 	# Élimine le joueur si pas d'égalité
 	if elim != -1 and not tie:
+		var player_data = NetworkHandler.players.get(elim, {})
+		var player_name = player_data.get("name", "Inconnu")
+		var player_role = player_data.get("role", "Inconnu")
 		NetworkHandler.eliminate_player_by_vote(elim)
-		rpc("rpc_voting_completed", elim, false)
+		rpc("rpc_voting_completed", elim, false, player_name, player_role)
 	else:
-		rpc("rpc_voting_completed", -1, true)
+		rpc("rpc_voting_completed", -1, true, "", "")
 	
 	# Attend 5 secondes avant de relancer le jeu
 	await get_tree().create_timer(5.0).timeout
@@ -197,9 +218,19 @@ func _resolve_voting_results():
 
 # RPC: Vote terminé
 @rpc("call_local", "reliable")
-func rpc_voting_completed(_elim_id: int, _tie: bool):
+func rpc_voting_completed(_elim_id: int, tie: bool, player_name: String, player_role: String):
 	voting_ui.visible = false
 	is_voting_phase = false
+	
+	# Affiche le résultat du vote
+	if tie:
+		announcement_label.text = "ÉGALITÉ - Personne n'est éliminé"
+	elif _elim_id != -1:
+		announcement_label.text = "%s (%s) a été éliminé !" % [player_name, player_role]
+	
+	announcement_label.visible = true
+	await get_tree().create_timer(4.0).timeout
+	announcement_label.visible = false
 
 # ========== Gestion fin de partie ==========
 
@@ -255,11 +286,17 @@ func spawn_corpse_on_all(player_id: int, pos: Vector2, color: Color, is_flipped:
 	)
 	bodies_container.add_child(corpse)
 
-# RPC: Supprime un cadavre lors d'une résurrection
+# RPC: Supprime un cadavre et retourne la position
 @rpc("call_local", "reliable")
-func remove_corpse_on_all(player_id: int):
+func remove_corpse_on_all(player_id: int, revive_pos: Vector2):
 	var corpse = bodies_container.get_node_or_null("Corpse_%d" % player_id)
-	if corpse: corpse.queue_free()
+	if corpse: 
+		corpse.queue_free()
+	
+	# Téléporte le joueur à la position du cadavre
+	var player = players_root.get_node_or_null("Player_%d" % player_id)
+	if player:
+		player.global_position = revive_pos
 
 # ========== Handshake et synchronisation ==========
 

@@ -328,8 +328,12 @@ func request_revive_player(target_id: int) -> void:
 	
 	var scene = get_game_scene()
 	if scene:
-		scene.rpc("remove_corpse_on_all", target_id)
+		# Récupère la position du cadavre
+		var corpse = scene.get_node_or_null("DeadBodies/Corpse_%d" % target_id)
+		var revive_pos = corpse.global_position if corpse else Vector2.ZERO
+		
 		rpc("revive_player_in_scene", target_id)
+		scene.rpc("remove_corpse_on_all", target_id, revive_pos)
 
 # RPC: Ressuscite un joueur dans la scène
 @rpc("any_peer", "call_local", "reliable")
