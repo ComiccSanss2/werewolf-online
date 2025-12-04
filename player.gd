@@ -263,7 +263,10 @@ func _update_chest_state() -> void:
 		is_in_chest = true
 		if not can_hide:
 			_show_cooldown_on_chest()
-		update_chest_ui()
+		# Demande l'état d'occupation au serveur
+		var chest = _find_chest_area()
+		if chest:
+			NetworkHandler.rpc_id(1, "request_chest_occupancy_state", chest.global_position)
 		if is_instance_valid(press_space_label): press_space_label.visible = false
 
 # Vérifie la proximité des cadavres
