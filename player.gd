@@ -34,6 +34,7 @@ const KILL_RANGE = 15.0
 const REVIVE_RANGE = 25.0
 const HIDE_DURATION = 10.0
 const HIDE_COOLDOWN = 10.0
+const REPORT_RANGE = 30.0
 const STUN_RADIUS_ON_EXIT = 60.0 
 const STUN_DURATION = 2.5       
 
@@ -43,6 +44,10 @@ var cooldown_timer = 0.0
 var can_hide = true
 var cooldown_label: Label
 var hide_label: Label
+
+# Système de report
+var report_label: Label
+var nearby_corpse = false
 
 # Audio footsteps
 var sfx_grass = preload("res://sfx_grass.tres")
@@ -114,11 +119,43 @@ func _remove_hide_label() -> void:
 	if hide_label and is_instance_valid(hide_label): hide_label.queue_free()
 	hide_label = null
 
+# Affiche le label de report près d'un cadavre
+func _show_report_label() -> void:
+	if report_label: return
+	report_label = Label.new()
+	report_label.text = "Appuyer [R] pour reporter"
+	report_label.position = Vector2(-80, -60)
+	report_label.add_theme_font_size_override("font_size", 12)
+	report_label.add_theme_color_override("font_color", Color.RED)
+	report_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	report_label.add_theme_constant_override("outline_size", 4)
+	report_label.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(report_label)
+
+func _remove_report_label() -> void:
+	if report_label and is_instance_valid(report_label): report_label.queue_free()
+	report_label = null
+
+# Tente de reporter un corps
+func _try_report_body() -> void:
+	if not nearby_corpse or is_dead: return
+	rpc_id(1, "report_body_to_server")
+
+# RPC: Envoie le report au serveur
+@rpc("any_peer", "call_local", "reliable")
+func report_body_to_server():
+	if not multiplayer.is_server(): return
+	var scene = get_tree().get_root().get_node_or_null("TestScene")
+	if scene and scene.has_method("trigger_emergency_meeting"):
+		scene.trigger_emergency_meeting()
+
 func _update_visuals() -> void:
 	if not name_label: return
 	var data = NetworkHandler.players.get(_my_id(), {})
 	var text = data.get("name", "Player %s" % _my_id())
-	if data.has("role"): text += " (%s)" % data["role"]
+	# Affiche le rôle seulement si c'est notre propre joueur
+	if _is_authority() and data.has("role"): 
+		text += " (%s)" % data["role"]
 	name_label.text = text
 	var color = data.get("color", Color.WHITE)
 	if is_dead: color.a = 0.5 
@@ -152,6 +189,7 @@ func _process(delta: float) -> void:
 	if not is_dead:
 		_update_timers(delta)
 		_update_chest_state()
+		_update_corpse_state()
 		_handle_inputs()
 	
 	if is_hidden:
@@ -225,12 +263,14 @@ func _update_chest_state() -> void:
 		is_in_chest = true
 		if not can_hide:
 			_show_cooldown_on_chest()
-			if is_instance_valid(press_space_label): press_space_label.visible = false
+		update_chest_ui()
+		if is_instance_valid(press_space_label): press_space_label.visible = false
 
 func _handle_inputs() -> void:
 	if Input.is_action_just_pressed("ui_accept"): _try_hide_or_open_chest()
 	if Input.is_action_just_pressed("kill"): _try_kill_nearby_player()
 	if Input.is_action_just_pressed("revive"): _try_revive_nearby_player()
+	if Input.is_action_just_pressed("report"): _try_report_body()
 
 func _find_chest_area():
 	for area in chest_area.get_overlapping_areas():

@@ -133,6 +133,13 @@ func _on_game_timer_ended():
 		current_votes.clear()
 		rpc("start_voting_phase")
 
+# Déclenche une réunion d'urgence (report de corps)
+func trigger_emergency_meeting():
+	if not multiplayer.is_server(): return
+	game_timer.stop()
+	current_votes.clear()
+	rpc("start_voting_phase")
+
 # ========== Phase de vote ==========
 
 # RPC: Démarre la phase de vote
@@ -205,11 +212,10 @@ func _resolve_voting_results():
 	if elim != -1 and not tie:
 		var player_data = NetworkHandler.players.get(elim, {})
 		var player_name = player_data.get("name", "Inconnu")
-		var player_role = player_data.get("role", "Inconnu")
 		NetworkHandler.eliminate_player_by_vote(elim)
-		rpc("rpc_voting_completed", elim, false, player_name, player_role)
+		rpc("rpc_voting_completed", elim, false, player_name)
 	else:
-		rpc("rpc_voting_completed", -1, true, "", "")
+		rpc("rpc_voting_completed", -1, true, "")
 	
 	# Attend 5 secondes avant de relancer le jeu
 	await get_tree().create_timer(5.0).timeout
@@ -218,7 +224,7 @@ func _resolve_voting_results():
 
 # RPC: Vote terminé
 @rpc("call_local", "reliable")
-func rpc_voting_completed(_elim_id: int, tie: bool, player_name: String, player_role: String):
+func rpc_voting_completed(_elim_id: int, tie: bool, player_name: String):
 	voting_ui.visible = false
 	is_voting_phase = false
 	
@@ -226,7 +232,7 @@ func rpc_voting_completed(_elim_id: int, tie: bool, player_name: String, player_
 	if tie:
 		announcement_label.text = "ÉGALITÉ - Personne n'est éliminé"
 	elif _elim_id != -1:
-		announcement_label.text = "%s (%s) a été éliminé !" % [player_name, player_role]
+		announcement_label.text = "%s a été éliminé !" % player_name
 	
 	announcement_label.visible = true
 	await get_tree().create_timer(4.0).timeout
