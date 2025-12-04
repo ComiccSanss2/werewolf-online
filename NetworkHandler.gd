@@ -7,9 +7,8 @@ var nickname = "Player"
 var is_host = false
 var players = {}  # { id: { name, color, role, is_dead, has_revived, has_killed } }
 
-# --- VARIABLE MANQUANTE AJOUTÉE ICI ---
 var is_gameplay_active: bool = false
-# --------------------------------------
+# -------------------------------------------------------------
 
 # Signaux pour communiquer avec l'UI
 signal lobby_players_updated(players)
@@ -95,7 +94,7 @@ func _get_player_node(player_id: int):
 func _get_chest_manager():
 	return get_tree().get_root().get_node_or_null("TestScene/TileMap_Interactions")
 
-# Retourne la scène de jeu
+# Retourne la scène de jeu (Sécurité pour éviter le crash Node not Found)
 func get_game_scene() -> Node:
 	return get_tree().get_root().get_node_or_null("TestScene")
 
@@ -130,7 +129,6 @@ func _on_peer_disconnected(id: int) -> void:
 # ========== Attribution des rôles ==========
 
 # Assigne aléatoirement les rôles aux joueurs
-# Assigne aléatoirement les rôles aux joueurs
 func _assign_roles() -> void:
 	if not is_host: return
 	
@@ -142,6 +140,7 @@ func _assign_roles() -> void:
 	
 	var num_wolves = 1
 	
+	# Si tu veux 2 loups à partir de 6 joueurs, remplace 8 par 5
 	if n > 8:
 		num_wolves = 2
 	

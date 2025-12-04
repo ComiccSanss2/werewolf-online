@@ -1,11 +1,12 @@
-[gd_scene load_steps=8 format=3 uid="uid://ci5161vfs7r7j"]
+[gd_scene load_steps=9 format=3 uid="uid://ci5161vfs7r7j"]
 
 [ext_resource type="Script" uid="uid://67h077mpt7cd" path="res://voting_screen.gd" id="1_idhib"]
+[ext_resource type="Texture2D" uid="uid://cottpgqkao35a" path="res://assets/backgroundmenu.png" id="2_qwxpf"]
 [ext_resource type="Texture2D" uid="uid://bfmuvpgk1qt5i" path="res://assets/backgroundvote.png" id="2_qynmp"]
 
 [sub_resource type="Gradient" id="Gradient_idhib"]
 offsets = PackedFloat32Array(0.9970238, 1)
-colors = PackedColorArray(1, 0.25369403, 0.721538, 1, 1, 1, 1, 0)
+colors = PackedColorArray(0.7096467, 1.3813526e-05, 0.492621, 1, 1, 1, 1, 0)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_qynmp"]
 gradient = SubResource("Gradient_idhib")
@@ -38,14 +39,15 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_idhib")
 
-[node name="BackgroundSky" type="ColorRect" parent="."]
+[node name="BackgroundSky" type="TextureRect" parent="."]
+texture_filter = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0.97628254, 0.96956784, 0.99335665, 1)
+texture = ExtResource("2_qwxpf")
 
 [node name="Stars" type="GPUParticles2D" parent="."]
 position = Vector2(996, 556)
@@ -61,11 +63,16 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = -3.0
+offset_top = 1.0
+offset_right = -1.0
+offset_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("2_qynmp")
 
 [node name="Panel" type="Panel" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -81,8 +88,11 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -200.0
-offset_top = -201.5
+offset_top = -332.0
 offset_right = 200.0
-offset_bottom = 201.5
+offset_bottom = 462.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 20
+columns = 2

@@ -10,8 +10,8 @@ var is_dead = false
 
 var is_stunned = false
 var stun_timer = 0.0
-@onready var stun_visual = $StunVisual 
 
+@onready var stun_visual = $StunVisual 
 @onready var anim = $AnimatedSprite2D
 @onready var name_label = $NameLabel
 @onready var camera = $Camera2D
@@ -19,7 +19,6 @@ var stun_timer = 0.0
 @onready var collision_shape = $CollisionShape2D
 @onready var press_space_label = $PressSpaceLabel
 @onready var is_occupied_label = $IsOccupiedLabel
-
 @onready var footstep_player: AudioStreamPlayer2D = $FootstepPlayer
 @onready var chest_audio_player: AudioStreamPlayer2D = $ChestAudioPlayer
 @onready var step_timer: Timer = $StepTimer
@@ -28,10 +27,9 @@ const KILL_RANGE = 15.0
 const REVIVE_RANGE = 25.0
 const HIDE_DURATION = 10.0
 const HIDE_COOLDOWN = 10.0
-# Augmentation de la distance de report pour faciliter l'action
-const REPORT_RANGE = 60.0 
-const STUN_RADIUS_ON_EXIT = 60.0 
-const STUN_DURATION = 2.5        
+const REPORT_RANGE = 20.0 
+const STUN_RADIUS_ON_EXIT = 50.0 
+const STUN_DURATION = 2.0       
 
 var hide_timer = 0.0
 var cooldown_timer = 0.0

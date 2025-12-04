@@ -1,8 +1,9 @@
-[gd_scene load_steps=11 format=3 uid="uid://yscgsx5lmjcl"]
+[gd_scene load_steps=13 format=3 uid="uid://yscgsx5lmjcl"]
 
 [ext_resource type="Script" uid="uid://bok8xx2xd78ek" path="res://player.gd" id="1_4flbx"]
 [ext_resource type="SpriteFrames" uid="uid://dg662mg2wndr5" path="res://player_frames.tres" id="2_i3pqv"]
 [ext_resource type="Texture2D" uid="uid://b8fenhq7841n2" path="res://assets/stun.png" id="3_hqtel"]
+[ext_resource type="FontFile" uid="uid://cjefwub6iqqgd" path="res://assets/fonts/Daydream DEMO.otf" id="4_sweqy"]
 [ext_resource type="AudioStream" uid="uid://bkv2uxw3l8r1q" path="res://assets/sfx/hidechest.wav" id="5_sweqy"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_sweqy"]
@@ -34,6 +35,11 @@ size = Vector2(11.5, 7)
 radius = 8.0
 
 [sub_resource type="LabelSettings" id="LabelSettings_i3pqv"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_2hs0m"]
+font = ExtResource("4_sweqy")
+font_size = 10
+font_color = Color(0.9541288, 0.56332564, 0.22229916, 1)
 
 [node name="Player" type="CharacterBody2D"]
 collision_mask = 3
@@ -90,10 +96,11 @@ visible = false
 texture_filter = 1
 offset_left = 11.0
 offset_top = -8.0
-offset_right = 177.0
-offset_bottom = 15.0
+offset_right = 221.0
+offset_bottom = 9.0
 scale = Vector2(0.3200031, 0.35999876)
-text = "Hiding spot occupied."
+text = "Hiding spot is occupied."
+label_settings = SubResource("LabelSettings_2hs0m")
 
 [node name="FootstepPlayer" type="AudioStreamPlayer2D" parent="."]
 max_distance = 90.0

@@ -1,0 +1,52 @@
+[gd_scene load_steps=6 format=3 uid="uid://58w7qy2vj2n7"]
+
+[ext_resource type="Script" uid="uid://bnknxyy3fgp6t" path="res://loading_screen.gd" id="1_fgney"]
+[ext_resource type="Texture2D" uid="uid://cottpgqkao35a" path="res://assets/backgroundmenu.png" id="2_74xf4"]
+[ext_resource type="FontFile" uid="uid://cjefwub6iqqgd" path="res://assets/fonts/Daydream DEMO.otf" id="3_pa1l2"]
+[ext_resource type="Script" uid="uid://c88jh0m0sgkp8" path="res://rainbow_label.gd" id="4_401ed"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_38ncu"]
+font = ExtResource("3_pa1l2")
+font_size = 55
+font_color = Color(0.2901961, 0.31764707, 1, 1)
+shadow_size = 30
+shadow_color = Color(0, 0, 0, 1)
+
+[node name="LoadingScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_fgney")
+
+[node name="Background" type="TextureRect" parent="."]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_74xf4")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="LoadingLabel" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -50.0
+offset_right = 300.0
+offset_bottom = 50.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "LOADING..."
+label_settings = SubResource("LabelSettings_38ncu")
+horizontal_alignment = 1
+script = ExtResource("4_401ed")

@@ -1,9 +1,20 @@
-[gd_scene load_steps=20 format=3 uid="uid://sjbtxtro5v83"]
+[gd_scene load_steps=25 format=3 uid="uid://sjbtxtro5v83"]
 
 [ext_resource type="Script" uid="uid://dfiypymj4ct8q" path="res://lobby.gd" id="1_ll2xe"]
+[ext_resource type="Texture2D" uid="uid://cottpgqkao35a" path="res://assets/backgroundmenu.png" id="2_1gg6n"]
 [ext_resource type="Texture2D" uid="uid://p785uftppdll" path="res://assets/StartButton.png" id="2_tftiq"]
-[ext_resource type="Texture2D" uid="uid://dl147nj717l6d" path="res://assets/LOBBY.png" id="2_xrgmn"]
 [ext_resource type="Texture2D" uid="uid://el3x6l6qyprf" path="res://assets/StartButtonHover.png" id="3_1gg6n"]
+[ext_resource type="FontFile" uid="uid://cjefwub6iqqgd" path="res://assets/fonts/Daydream DEMO.otf" id="3_x4164"]
+[ext_resource type="Script" uid="uid://c88jh0m0sgkp8" path="res://rainbow_label.gd" id="4_8ldoj"]
+[ext_resource type="Texture2D" uid="uid://b66leuj6iaug" path="res://assets/MainMenuButton.png" id="7_ein8w"]
+[ext_resource type="Texture2D" uid="uid://bffr1yapttrf7" path="res://assets/MainMenuHover.png" id="8_gm5bj"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_ein8w"]
+font = ExtResource("3_x4164")
+font_size = 55
+font_color = Color(0.2901961, 0.31764707, 1, 1)
+shadow_size = 30
+shadow_color = Color(0, 0, 0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_xrgmn"]
 bg_color = Color(1, 1, 1, 1)
@@ -60,13 +71,14 @@ grow_vertical = 2
 script = ExtResource("1_ll2xe")
 
 [node name="Background" type="TextureRect" parent="."]
+texture_filter = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("2_xrgmn")
+texture = ExtResource("2_1gg6n")
 expand_mode = 1
 stretch_mode = 6
 
@@ -78,20 +90,20 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="LabelTitle" type="Label" parent="CanvasLayer"]
-visible = false
+[node name="TitleLabel" type="Label" parent="CanvasLayer"]
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -169.0
-offset_top = 52.0
-offset_right = 169.0
-offset_bottom = 101.0
+offset_left = -298.0
+offset_top = 103.0
+offset_right = 302.0
+offset_bottom = 203.0
 grow_horizontal = 2
 text = "LOBBY"
+label_settings = SubResource("LabelSettings_ein8w")
 horizontal_alignment = 1
-vertical_alignment = 1
+script = ExtResource("4_8ldoj")
 
 [node name="ButtonStart" type="TextureButton" parent="CanvasLayer"]
 layout_mode = 1
@@ -111,6 +123,18 @@ pivot_offset = Vector2(351, 177)
 texture_normal = ExtResource("2_tftiq")
 texture_pressed = ExtResource("3_1gg6n")
 texture_hover = ExtResource("3_1gg6n")
+
+[node name="MenuButton" type="TextureButton" parent="CanvasLayer"]
+texture_filter = 1
+layout_mode = 0
+offset_left = 135.0
+offset_top = 82.0
+offset_right = 958.0
+offset_bottom = 385.0
+scale = Vector2(0.4, 0.4)
+texture_normal = ExtResource("7_ein8w")
+texture_pressed = ExtResource("8_gm5bj")
+texture_hover = ExtResource("8_gm5bj")
 
 [node name="LabelStatus" type="Label" parent="CanvasLayer"]
 layout_mode = 1
@@ -210,13 +234,18 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -186.0
-offset_top = -192.0
+offset_top = -310.0
 offset_right = 191.0
-offset_bottom = 27.0
+offset_bottom = 271.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_fonts/normal_font = ExtResource("3_x4164")
+theme_override_font_sizes/normal_font_size = 30
 bbcode_enabled = true
-text = "PlayersList"
+text = "Players  List"
 horizontal_alignment = 1
+
+[node name="SFX_Player" type="AudioStreamPlayer" parent="."]
+volume_db = -18.571
 
 [connection signal="pressed" from="CanvasLayer/ButtonStart" to="." method="_on_StartButton_pressed"]

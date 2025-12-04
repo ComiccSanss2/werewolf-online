@@ -1,10 +1,36 @@
-[gd_scene load_steps=6 format=3 uid="uid://b788f0gr3cjua"]
+[gd_scene load_steps=17 format=3 uid="uid://b788f0gr3cjua"]
 
 [ext_resource type="Script" uid="uid://duo84m76ekvcf" path="res://main_menu.gd" id="1_06t4h"]
+[ext_resource type="Texture2D" uid="uid://cottpgqkao35a" path="res://assets/backgroundmenu.png" id="2_0o4t1"]
+[ext_resource type="FontFile" uid="uid://cjefwub6iqqgd" path="res://assets/fonts/Daydream DEMO.otf" id="2_8qtwp"]
 [ext_resource type="Texture2D" uid="uid://dl73ved7l83pe" path="res://assets/HostButton.png" id="2_fu7sn"]
 [ext_resource type="Texture2D" uid="uid://dhj71oarkcisy" path="res://assets/HostButtonHover.png" id="3_jix8l"]
+[ext_resource type="Script" uid="uid://c88jh0m0sgkp8" path="res://rainbow_label.gd" id="4_0k4wn"]
 [ext_resource type="Texture2D" uid="uid://1kr7khwk6u5x" path="res://assets/JoinButton.png" id="4_glbon"]
 [ext_resource type="Texture2D" uid="uid://bdob8yienbpw6" path="res://assets/JoinButtonHover.png" id="5_nlkkf"]
+[ext_resource type="Texture2D" uid="uid://7df368v35jsh" path="res://assets/IPbackground.png" id="7_dy7ct"]
+[ext_resource type="Texture2D" uid="uid://2ohtcfffyrvk" path="res://assets/Usernamebackground.png" id="8_0o4t1"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_0k4wn"]
+font = ExtResource("2_8qtwp")
+font_size = 55
+font_color = Color(0.2901961, 0.31764707, 1, 1)
+shadow_size = 30
+shadow_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_j5v2v"]
+texture = ExtResource("7_dy7ct")
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_8qtwp"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_iotk1"]
+font = ExtResource("2_8qtwp")
+font_size = 19
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_w44g7"]
+texture = ExtResource("8_0o4t1")
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_dy7ct"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -16,13 +42,14 @@ grow_vertical = 2
 script = ExtResource("1_06t4h")
 
 [node name="Background" type="TextureRect" parent="."]
+texture_filter = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-expand_mode = 1
+texture = ExtResource("2_0o4t1")
 stretch_mode = 6
 
 [node name="UI_Container" type="Control" parent="."]
@@ -44,13 +71,15 @@ layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -51.0
-offset_top = 84.0
-offset_right = 51.0
-offset_bottom = 115.0
+offset_left = -300.0
+offset_top = -91.0
+offset_right = 300.0
+offset_bottom = 9.0
 grow_horizontal = 2
-text = "LOUPGAROU"
+text = "Totally  Not  A  Wolf"
+label_settings = SubResource("LabelSettings_0k4wn")
 horizontal_alignment = 1
+script = ExtResource("4_0k4wn")
 
 [node name="HostButton" type="TextureButton" parent="UI_Container"]
 layout_mode = 1
@@ -91,51 +120,70 @@ texture_pressed = ExtResource("5_nlkkf")
 texture_hover = ExtResource("5_nlkkf")
 
 [node name="AddressInput" type="LineEdit" parent="UI_Container"]
+texture_filter = 1
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = 24.0
-offset_top = 5.0
-offset_right = 224.0
-offset_bottom = 106.0
+offset_left = -6.0
+offset_top = -121.0
+offset_right = 194.0
+offset_bottom = 52.5
 grow_horizontal = 2
 grow_vertical = 2
-placeholder_text = "IP"
+scale = Vector2(2, 2)
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 0)
+theme_override_colors/font_placeholder_color = Color(0, 0, 0, 0.59800005)
+theme_override_constants/outline_size = 2
+theme_override_fonts/font = ExtResource("2_8qtwp")
+theme_override_font_sizes/font_size = 11
+theme_override_styles/normal = SubResource("StyleBoxTexture_j5v2v")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_8qtwp")
+placeholder_text = "ip address"
 alignment = 1
 
 [node name="LabelNickname" type="Label" parent="UI_Container"]
+texture_filter = 1
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = 22.0
-offset_top = -174.0
-offset_right = 227.0
-offset_bottom = -124.0
+offset_left = -1.0
+offset_top = -218.0
+offset_right = 388.0
+offset_bottom = -168.0
 grow_horizontal = 2
 grow_vertical = 2
 text = "CHOOSE YOUR USERNAME"
+label_settings = SubResource("LabelSettings_iotk1")
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="NameInput" type="LineEdit" parent="UI_Container"]
+texture_filter = 1
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = 25.0
-offset_top = -131.0
-offset_right = 222.0
-offset_bottom = -75.0
+offset_left = -6.0
+offset_top = -289.0
+offset_right = 394.0
+offset_bottom = 74.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_placeholder_color = Color(0, 0, 0, 0.6)
+theme_override_fonts/font = ExtResource("2_8qtwp")
+theme_override_font_sizes/font_size = 19
+theme_override_styles/normal = SubResource("StyleBoxTexture_w44g7")
+theme_override_styles/focus = SubResource("StyleBoxEmpty_dy7ct")
 placeholder_text = "Username"
 alignment = 1
 
@@ -152,6 +200,9 @@ offset_right = 72.0
 offset_bottom = 155.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="SFX_Player" type="AudioStreamPlayer" parent="."]
+volume_db = -18.571
 
 [connection signal="pressed" from="UI_Container/HostButton" to="." method="_on_HostButton_pressed"]
 [connection signal="pressed" from="UI_Container/JoinButton" to="." method="_on_JoinButton_pressed"]

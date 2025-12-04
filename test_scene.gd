@@ -361,7 +361,7 @@ func _on_server_disconnected():
 # Retour au menu
 func _on_go_back_to_menu():
 	NetworkHandler.stop_network()
-	get_tree().change_scene_to_file("res://MainMenu.tscn")
+	get_tree().change_scene_to_file("res://main_menu.tscn")
 
 # ========== Spawn des cadavres ==========
 
