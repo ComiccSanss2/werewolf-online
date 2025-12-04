@@ -15,74 +15,143 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_06t4h")
 
-[node name="TitleLabel" type="Label" parent="."]
-layout_mode = 0
-offset_left = 406.0
-offset_top = 84.0
-offset_right = 508.0
-offset_bottom = 115.0
-text = "LOUPGAROU"
-
-[node name="HostButton" type="TextureButton" parent="."]
+[node name="Background" type="TextureRect" parent="."]
 layout_mode = 1
-anchors_preset = -1
-anchor_top = 0.5
+anchors_preset = 15
 anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="UI_Container" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = 144.0
-offset_top = -187.0
-offset_right = 144.0
-offset_bottom = 116.0
+offset_left = -576.0
+offset_top = -324.0
+offset_right = 576.0
+offset_bottom = 324.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TitleLabel" type="Label" parent="UI_Container"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -51.0
+offset_top = 84.0
+offset_right = 51.0
+offset_bottom = 115.0
+grow_horizontal = 2
+text = "LOUPGAROU"
+horizontal_alignment = 1
+
+[node name="HostButton" type="TextureButton" parent="UI_Container"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -673.0
+offset_top = -253.0
+offset_right = 191.0
+offset_bottom = 50.0
 grow_horizontal = 2
 grow_vertical = 2
 scale = Vector2(0.5, 0.5)
+pivot_offset = Vector2(432, 151)
 texture_normal = ExtResource("2_fu7sn")
 texture_pressed = ExtResource("3_jix8l")
 texture_hover = ExtResource("3_jix8l")
 
-[node name="JoinButton" type="TextureButton" parent="."]
-layout_mode = 0
-offset_left = 154.0
-offset_top = 304.0
-offset_right = 977.0
-offset_bottom = 607.0
+[node name="JoinButton" type="TextureButton" parent="UI_Container"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -652.0
+offset_top = -93.0
+offset_right = 171.0
+offset_bottom = 210.0
+grow_horizontal = 2
+grow_vertical = 2
 scale = Vector2(0.5, 0.5)
+pivot_offset = Vector2(411, 151)
 texture_normal = ExtResource("4_glbon")
 texture_pressed = ExtResource("5_nlkkf")
 texture_hover = ExtResource("5_nlkkf")
 
-[node name="AddressInput" type="LineEdit" parent="."]
-layout_mode = 0
-offset_left = 600.0
-offset_top = 329.0
-offset_right = 800.0
-offset_bottom = 430.0
+[node name="AddressInput" type="LineEdit" parent="UI_Container"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 24.0
+offset_top = 5.0
+offset_right = 224.0
+offset_bottom = 106.0
+grow_horizontal = 2
+grow_vertical = 2
 placeholder_text = "IP"
+alignment = 1
 
-[node name="LabelNickname" type="Label" parent="."]
-layout_mode = 0
-offset_left = 598.0
-offset_top = 150.0
-offset_right = 803.0
-offset_bottom = 200.0
+[node name="LabelNickname" type="Label" parent="UI_Container"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 22.0
+offset_top = -174.0
+offset_right = 227.0
+offset_bottom = -124.0
+grow_horizontal = 2
+grow_vertical = 2
 text = "CHOOSE YOUR USERNAME"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="NameInput" type="LineEdit" parent="."]
-layout_mode = 0
-offset_left = 601.0
-offset_top = 193.0
-offset_right = 798.0
-offset_bottom = 249.0
+[node name="NameInput" type="LineEdit" parent="UI_Container"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 25.0
+offset_top = -131.0
+offset_right = 222.0
+offset_bottom = -75.0
+grow_horizontal = 2
+grow_vertical = 2
 placeholder_text = "Username"
+alignment = 1
 
-[node name="ErrorLabel" type="Label" parent="."]
-layout_mode = 0
-offset_left = 608.0
-offset_top = 456.0
-offset_right = 648.0
-offset_bottom = 479.0
+[node name="ErrorLabel" type="Label" parent="UI_Container"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 32.0
+offset_top = 132.0
+offset_right = 72.0
+offset_bottom = 155.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[connection signal="pressed" from="HostButton" to="." method="_on_HostButton_pressed"]
-[connection signal="pressed" from="JoinButton" to="." method="_on_JoinButton_pressed"]
+[connection signal="pressed" from="UI_Container/HostButton" to="." method="_on_HostButton_pressed"]
+[connection signal="pressed" from="UI_Container/JoinButton" to="." method="_on_JoinButton_pressed"]

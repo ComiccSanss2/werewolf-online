@@ -9,8 +9,8 @@ colors = PackedColorArray(1, 0.25369403, 0.721538, 1, 1, 1, 1, 0)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_qynmp"]
 gradient = SubResource("Gradient_idhib")
-width = 4
-height = 4
+width = 6
+height = 6
 fill = 1
 
 [sub_resource type="Gradient" id="Gradient_qwxpf"]
@@ -48,8 +48,8 @@ grow_vertical = 2
 color = Color(0.97628254, 0.96956784, 0.99335665, 1)
 
 [node name="Stars" type="GPUParticles2D" parent="."]
-position = Vector2(577, 361)
-scale = Vector2(0.9600024, -0.90815324)
+position = Vector2(996, 556)
+scale = Vector2(1.5999951, 1.44)
 amount = 150
 texture = SubResource("GradientTexture2D_qynmp")
 lifetime = 4.0
@@ -74,8 +74,15 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="GridContainer" type="GridContainer" parent="."]
-layout_mode = 0
-offset_left = 459.0
-offset_top = 162.0
-offset_right = 698.0
-offset_bottom = 565.0
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -201.5
+offset_right = 200.0
+offset_bottom = 201.5
+grow_horizontal = 2
+grow_vertical = 2

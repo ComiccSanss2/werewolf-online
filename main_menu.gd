@@ -1,9 +1,9 @@
 extends Control
 
 # Références aux éléments de l'interface
-@onready var name_input := $NameInput
-@onready var address_input := $AddressInput
-@onready var error_label := $ErrorLabel
+@onready var name_input := $UI_Container/NameInput
+@onready var address_input := $UI_Container/AddressInput
+@onready var error_label := $UI_Container/ErrorLabel
 
 func _ready() -> void:
 	# Connecter les signaux réseau pour gérer les événements de connexion

@@ -9,40 +9,40 @@
 bg_color = Color(1, 1, 1, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2wvic"]
-bg_color = Color(0.10980392, 0, 0.83137256, 1)
+bg_color = Color(0.109804, 0, 0.831373, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tftiq"]
-bg_color = Color(0.09803922, 0, 0.6, 1)
+bg_color = Color(0.0980392, 0, 0.6, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1gg6n"]
-bg_color = Color(0, 0.6, 0.12941177, 1)
+bg_color = Color(0, 0.6, 0.129412, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x4164"]
-bg_color = Color(0.007843138, 0.5019608, 0, 1)
+bg_color = Color(0.00784314, 0.501961, 0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_8ldoj"]
-bg_color = Color(0.96862745, 0, 0, 1)
+bg_color = Color(0.968627, 0, 0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ein8w"]
-bg_color = Color(0.6, 0.1254902, 0.1254902, 1)
+bg_color = Color(0.6, 0.12549, 0.12549, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_gm5bj"]
-bg_color = Color(0.9411765, 0.5803922, 0, 1)
+bg_color = Color(0.941176, 0.580392, 0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_g30ku"]
-bg_color = Color(0.6, 0.32156864, 0, 1)
+bg_color = Color(0.6, 0.321569, 0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_up7ya"]
 bg_color = Color(0.654902, 0, 0.8, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_mcopp"]
-bg_color = Color(0.52156866, 0, 0.6, 1)
+bg_color = Color(0.521569, 0, 0.6, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nu6hm"]
-bg_color = Color(1, 0.21960784, 0.93333334, 1)
+bg_color = Color(1, 0.219608, 0.933333, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7pn7i"]
-bg_color = Color(0.78431374, 0, 0.8392157, 1)
+bg_color = Color(0.784314, 0, 0.839216, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_7b1xw"]
 bg_color = Color(0, 0, 0, 1)
@@ -59,48 +59,97 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_ll2xe")
 
-[node name="CanvasLayer" type="CanvasLayer" parent="."]
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_xrgmn")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="CanvasLayer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="LabelTitle" type="Label" parent="CanvasLayer"]
 visible = false
-offset_left = 406.0
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -169.0
 offset_top = 52.0
-offset_right = 744.0
+offset_right = 169.0
 offset_bottom = 101.0
+grow_horizontal = 2
 text = "LOBBY"
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ButtonStart" type="TextureButton" parent="CanvasLayer"]
-offset_left = 390.0
-offset_top = 471.0
-offset_right = 1093.0
-offset_bottom = 826.0
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -362.0
+offset_top = -383.0
+offset_right = 341.0
+offset_bottom = -28.0
+grow_horizontal = 2
+grow_vertical = 0
 scale = Vector2(0.5, 0.5)
+pivot_offset = Vector2(351, 177)
 texture_normal = ExtResource("2_tftiq")
 texture_pressed = ExtResource("3_1gg6n")
 texture_hover = ExtResource("3_1gg6n")
 
 [node name="LabelStatus" type="Label" parent="CanvasLayer"]
-offset_left = 384.0
-offset_top = 450.0
-offset_right = 773.0
-offset_bottom = 509.0
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -192.0
+offset_top = -90.0
+offset_right = 197.0
+offset_bottom = -31.0
+grow_horizontal = 2
+grow_vertical = 2
 horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="ColorButton" type="Button" parent="CanvasLayer"]
-offset_left = 928.0
-offset_top = 78.0
-offset_right = 1028.0
-offset_bottom = 118.0
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -333.0
+offset_top = 213.0
+offset_right = -233.0
+offset_bottom = 253.0
+grow_horizontal = 0
 text = "Couleur"
 
 [node name="ColorPanel" type="Panel" parent="CanvasLayer"]
-offset_left = 920.0
-offset_top = 130.0
-offset_right = 1065.0
-offset_bottom = 320.0
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -351.0
+offset_top = 262.0
+offset_right = -206.0
+offset_bottom = 452.0
+grow_horizontal = 0
 theme_override_styles/panel = SubResource("StyleBoxFlat_xrgmn")
 
 [node name="GridContainer" type="GridContainer" parent="CanvasLayer/ColorPanel"]
@@ -154,16 +203,20 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_7b1xw")
 theme_override_styles/hover = SubResource("StyleBoxFlat_wjc17")
 
 [node name="PlayersList" type="RichTextLabel" parent="CanvasLayer"]
-offset_left = 536.0
-offset_top = 209.0
-offset_right = 620.0
-offset_bottom = 428.0
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -186.0
+offset_top = -192.0
+offset_right = 191.0
+offset_bottom = 27.0
+grow_horizontal = 2
+grow_vertical = 2
 bbcode_enabled = true
 text = "PlayersList"
-
-[node name="Lobby" type="Sprite2D" parent="."]
-position = Vector2(579, 327)
-scale = Vector2(0.9999999, 0.99691826)
-texture = ExtResource("2_xrgmn")
+horizontal_alignment = 1
 
 [connection signal="pressed" from="CanvasLayer/ButtonStart" to="." method="_on_StartButton_pressed"]
