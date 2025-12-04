@@ -123,7 +123,7 @@ func _remove_hide_label() -> void:
 func _show_report_label() -> void:
 	if report_label: return
 	report_label = Label.new()
-	report_label.text = "Appuyer [R] pour reporter"
+	report_label.text = "Appuyer [T] pour reporter"
 	report_label.position = Vector2(-80, -60)
 	report_label.add_theme_font_size_override("font_size", 12)
 	report_label.add_theme_color_override("font_color", Color.RED)
@@ -265,6 +265,27 @@ func _update_chest_state() -> void:
 			_show_cooldown_on_chest()
 		update_chest_ui()
 		if is_instance_valid(press_space_label): press_space_label.visible = false
+
+# Vérifie la proximité des cadavres
+func _update_corpse_state() -> void:
+	var scene = get_tree().get_root().get_node_or_null("TestScene")
+	if not scene: return
+	
+	var bodies = scene.get_node_or_null("DeadBodies")
+	if not bodies: return
+	
+	var found_corpse = false
+	for corpse in bodies.get_children():
+		if global_position.distance_to(corpse.global_position) <= REPORT_RANGE:
+			found_corpse = true
+			break
+	
+	if found_corpse and not nearby_corpse:
+		nearby_corpse = true
+		_show_report_label()
+	elif not found_corpse and nearby_corpse:
+		nearby_corpse = false
+		_remove_report_label()
 
 func _handle_inputs() -> void:
 	if Input.is_action_just_pressed("ui_accept"): _try_hide_or_open_chest()
