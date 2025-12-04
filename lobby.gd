@@ -1,88 +1,102 @@
 extends Control
 
+# Références aux nœuds de l'interface
 @onready var players_list := $CanvasLayer/PlayersList
 @onready var start_button: TextureButton = $CanvasLayer/ButtonStart
 @onready var color_picker_panel := $CanvasLayer/ColorPanel
 @onready var color_grid := $CanvasLayer/ColorPanel/GridContainer
 @onready var open_color_btn := $CanvasLayer/ColorButton
 
-const COLORS_CHOICES = [Color.WHITE, Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW, Color.ORANGE, Color.PURPLE, Color.CYAN, Color.MAGENTA, Color.BLACK, Color.BROWN]
+# Utilise la même palette que NetworkHandler
+const COLORS_CHOICES = [
+	Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW, Color.ORANGE,
+	Color.PURPLE, Color.CYAN, Color.MAGENTA, Color.PINK, Color.LIME_GREEN,
+	Color(1.0, 0.5, 0.0), Color(0.5, 0.0, 0.5), Color(0.0, 0.5, 0.5),
+	Color(1.0, 0.75, 0.8), Color(0.5, 1.0, 0.5), Color(0.75, 0.5, 1.0)
+]
 
 func _ready() -> void:
-	start_button.visible = NetworkHandler.is_host # Assure-toi d'avoir is_host dans Network ou utilise multiplayer.is_server()
+	if start_button:
+		start_button.visible = NetworkHandler.is_host
+	
 	NetworkHandler.lobby_players_updated.connect(_update_list)
 	NetworkHandler.game_started.connect(_on_game_started)
 	
-	open_color_btn.pressed.connect(_on_open_color_picker)
+	if open_color_btn:
+		open_color_btn.pressed.connect(_on_open_color_picker)
 	_generate_color_buttons()
-	color_picker_panel.visible = false
+	if color_picker_panel:
+		color_picker_panel.visible = false
+	
 	_update_list(NetworkHandler.players)
 
+# Génère les boutons de sélection de couleur
 func _generate_color_buttons():
+	if not color_grid:
+		return
+	
 	for child in color_grid.get_children():
 		child.queue_free()
+	
+	color_grid.columns = 4
 	
 	for col in COLORS_CHOICES:
 		var btn = Button.new()
 		btn.custom_minimum_size = Vector2(40, 40)
 		
 		var style = StyleBoxFlat.new()
-		style.bg_color = Color.WHITE # Base blanche
-		style.set_corner_radius_all(4) # Optionnel : coins arrondis
+		style.bg_color = col
+		style.set_corner_radius_all(4)
 		
 		btn.add_theme_stylebox_override("normal", style)
 		btn.add_theme_stylebox_override("hover", style)
 		btn.add_theme_stylebox_override("pressed", style)
-		btn.modulate = col 
 		btn.pressed.connect(func(): _on_color_chosen(col))
 		color_grid.add_child(btn)
 
+# Affiche ou cache le panneau de sélection de couleur
 func _on_open_color_picker():
-	color_picker_panel.visible = !color_picker_panel.visible
+	if color_picker_panel:
+		color_picker_panel.visible = !color_picker_panel.visible
 
-# --- LOGIQUE DÉPLACÉE ICI ---
-
+# Appelé quand un joueur choisit une couleur
 func _on_color_chosen(color: Color):
-	# On appelle le RPC qui est maintenant DANS LE LOBBY
 	rpc("update_player_color_rpc", color)
-	color_picker_panel.visible = false
+	if color_picker_panel:
+		color_picker_panel.visible = false
 
-# Le RPC est reçu par les Lobbies de tout le monde
+# RPC : Met à jour la couleur d'un joueur
 @rpc("any_peer", "call_local", "reliable")
 func update_player_color_rpc(new_color: Color):
 	var sender_id = multiplayer.get_remote_sender_id()
 	if sender_id == 0:
 		sender_id = multiplayer.get_unique_id()
 	
-	# On met à jour la mémoire globale (Network)
-	if NetworkHandler.players.has(sender_id):
-		NetworkHandler.players[sender_id]["color"] = new_color
-		
-		# Synchroniser avec tous les clients
-		if NetworkHandler.is_host:
-			NetworkHandler.rpc("_sync_lobby_data", NetworkHandler.players)
-		else:
-			# Si on est client, on met juste à jour localement
-			_update_list(NetworkHandler.players)
-
-# -----------------------------
-
-func _update_list(players: Dictionary) -> void:
-	players_list.text = "Joueurs :\n"
+	if not NetworkHandler.players.has(sender_id):
+		return
 	
-	for id in players.keys():
-		var p_name = players[id]["name"]
-		
-		# Utiliser la couleur assignée, ou une couleur par défaut si absente
-		var p_color = players[id].get("color", Color.WHITE)
-		
-		var hex_code = p_color.to_html(false)
-		
-		players_list.text += "[color=#%s]- %s[/color]\n" % [hex_code, p_name]
+	NetworkHandler.players[sender_id]["color"] = new_color
+	
+	if NetworkHandler.is_host:
+		NetworkHandler.rpc("_sync_lobby_data", NetworkHandler.players)
+	else:
+		_update_list(NetworkHandler.players)
 
+# Met à jour l'affichage de la liste des joueurs avec leurs couleurs
+func _update_list(players: Dictionary) -> void:
+	if not players_list:
+		return
+	var text = "Joueurs :\n"
+	for p in players.values():
+		var hex = p.get("color", Color.WHITE).to_html(false)
+		text += "[color=#%s]- %s[/color]\n" % [hex, p["name"]]
+	players_list.text = text
+
+# Démarre la partie (uniquement pour l'hôte)
 func _on_StartButton_pressed() -> void:
 	if multiplayer.is_server():
-		NetworkHandler.start_game() # Assure-toi que cette fonction existe dans Network
+		NetworkHandler.start_game()
 
+# Change de scène vers le jeu quand la partie démarre
 func _on_game_started() -> void:
 	get_tree().change_scene_to_file("res://test_scene.tscn")
