@@ -185,7 +185,7 @@ func _resolve_voting_results():
 	
 	# Élimine le joueur si pas d'égalité
 	if elim != -1 and not tie:
-		NetworkHandler.request_kill_player(elim)
+		NetworkHandler.eliminate_player_by_vote(elim)
 		rpc("rpc_voting_completed", elim, false)
 	else:
 		rpc("rpc_voting_completed", -1, true)

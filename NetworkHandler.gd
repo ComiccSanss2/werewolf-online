@@ -282,6 +282,31 @@ func kill_player_in_scene(player_id: int) -> void:
 	var player = _get_player_node(player_id)
 	if player: player.rpc("play_death_animation")
 
+# Élimine un joueur par vote (sans vérification de rôle)
+func eliminate_player_by_vote(target_id: int) -> void:
+	if not multiplayer.is_server(): return
+	if not players.has(target_id) or is_player_dead(target_id): return
+	
+	var scene = get_game_scene()
+	if not scene: return
+	
+	# Récupère les infos du joueur
+	var victim_node = scene.get_node_or_null("Players/Player_%d" % target_id)
+	var pos = Vector2.ZERO
+	var col = Color.WHITE
+	var is_flipped = false
+	
+	if victim_node:
+		pos = victim_node.global_position
+		col = victim_node.anim.modulate
+		is_flipped = victim_node.anim.flip_h
+		victim_node.rpc("play_death_animation")
+	
+	players[target_id]["is_dead"] = true
+	rpc("_sync_lobby_data", players)
+	scene.rpc("spawn_corpse_on_all", target_id, pos, col, is_flipped)
+	check_win_condition()
+
 # RPC: Demande de ressusciter un joueur
 @rpc("any_peer", "call_local", "reliable")
 func request_revive_player(target_id: int) -> void:
