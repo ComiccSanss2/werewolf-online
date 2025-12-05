@@ -29,7 +29,7 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_bwjto"]
-size = Vector2(11.5, 7)
+size = Vector2(10.75, 4)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_i3pqv"]
 radius = 8.0
@@ -42,6 +42,7 @@ font_size = 10
 font_color = Color(0.9541288, 0.56332564, 0.22229916, 1)
 
 [node name="Player" type="CharacterBody2D"]
+y_sort_enabled = true
 collision_mask = 3
 script = ExtResource("1_4flbx")
 
@@ -60,7 +61,7 @@ frame_progress = 0.98702174
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 z_index = 16
-position = Vector2(-0.25, 0.5)
+position = Vector2(-0.375, 5)
 shape = SubResource("RectangleShape2D_bwjto")
 
 [node name="Camera2D" type="Camera2D" parent="."]
