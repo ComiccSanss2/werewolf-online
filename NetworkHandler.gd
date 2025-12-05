@@ -141,7 +141,7 @@ func _assign_roles() -> void:
 	var num_wolves = 1
 	
 	# Si tu veux 2 loups à partir de 6 joueurs, remplace 8 par 5
-	if n > 8:
+	if n > 7:
 		num_wolves = 2
 	
 	var shuffled = ids.duplicate()

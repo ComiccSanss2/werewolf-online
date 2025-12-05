@@ -134,13 +134,33 @@ func report_body_to_server():
 
 func _update_visuals() -> void:
 	if not name_label: return
-	var data = NetworkHandler.players.get(_my_id(), {})
-	var text = data.get("name", "Player %s" % _my_id())
-	if _is_authority() and data.has("role"): 
+	
+	# L'ID du joueur que ce script contrôle (la cible)
+	var target_id = get_multiplayer_authority()
+	# L'ID de celui qui regarde l'écran (moi)
+	var viewer_id = multiplayer.get_unique_id()
+	var data = NetworkHandler.players.get(target_id, {})
+	var text = data.get("name", "Player %s" % target_id)
+	var show_role = false
+	
+	if target_id == viewer_id:
+		show_role = true
+		
+	elif NetworkHandler.is_werewolf(viewer_id) and NetworkHandler.is_werewolf(target_id):
+		show_role = true
+		
+	elif NetworkHandler.is_player_dead(viewer_id): show_role = true
+	
+	if show_role and data.has("role"):
 		text += " (%s)" % data["role"]
+	# -----------------------------------
+	
 	name_label.text = text
+	
 	var color = data.get("color", Color.WHITE)
+	
 	if is_dead: color.a = 0.5 
+	
 	anim.modulate = color
 	name_label.modulate = color
 
