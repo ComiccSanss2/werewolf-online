@@ -1,4 +1,4 @@
-[gd_scene load_steps=36 format=3 uid="uid://bwn5wql4y1s1f"]
+[gd_scene load_steps=39 format=3 uid="uid://bwn5wql4y1s1f"]
 
 [ext_resource type="Script" uid="uid://cfoycnkuxps4n" path="res://test_scene.gd" id="1_uhqqe"]
 [ext_resource type="Script" uid="uid://d3w5otoficip0" path="res://chest_interactions.gd" id="2_0k8yu"]
@@ -18,6 +18,8 @@
 [ext_resource type="Texture2D" uid="uid://k7xwkhpijmj5" path="res://assets/light.png" id="12_oo8pe"]
 [ext_resource type="FontFile" uid="uid://cjefwub6iqqgd" path="res://assets/fonts/Daydream DEMO.otf" id="16_2dw41"]
 [ext_resource type="PackedScene" uid="uid://f7814qfgyrt6" path="res://GameOverUI.tscn" id="17_k6its"]
+[ext_resource type="AudioStream" uid="uid://d32a7jwhl85jj" path="res://assets/sfx/gameost.wav" id="19_g6y4b"]
+[ext_resource type="AudioStream" uid="uid://vjudjkuyr2er" path="res://assets/sfx/votingost.wav" id="20_pvxhv"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_sasra"]
 texture = ExtResource("2_ia1lp")
@@ -459,6 +461,11 @@ font_color = Color(1, 0.40955335, 0.34002635, 1)
 outline_size = 4
 outline_color = Color(0, 0, 0, 1)
 
+[sub_resource type="LabelSettings" id="LabelSettings_g6y4b"]
+font = ExtResource("16_2dw41")
+font_size = 30
+font_color = Color(1, 0.29037696, 0.3524866, 1)
+
 [node name="TestScene" type="Node2D"]
 script = ExtResource("1_uhqqe")
 
@@ -639,3 +646,25 @@ grow_horizontal = 2
 text = "Appuyer [T] pour reporter"
 label_settings = SubResource("LabelSettings_2dw41")
 horizontal_alignment = 1
+
+[node name="ReportAnnounceLabel" type="Label" parent="UI_Layer"]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -11.5
+offset_right = 20.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+label_settings = SubResource("LabelSettings_g6y4b")
+
+[node name="GameOSTPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("19_g6y4b")
+volume_db = -7.428
+
+[node name="VotingOSTPlayer" type="AudioStreamPlayer" parent="."]
+stream = ExtResource("20_pvxhv")
+volume_db = -7.893

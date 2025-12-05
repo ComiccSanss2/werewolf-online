@@ -1,17 +1,21 @@
 extends CharacterBody2D
 
+# Vitesse de déplacement du joueur
 @export var speed = 75.0
 
+# États du joueur
 var is_in_chest = false
 var move_dir = Vector2.ZERO
 var last_move_dir = Vector2.DOWN
 var is_hidden = false
 var is_dead = false
 
+### STUN VARIABLES ###
 var is_stunned = false
 var stun_timer = 0.0
-
 @onready var stun_visual = $StunVisual 
+
+# Références aux nœuds de la scène
 @onready var anim = $AnimatedSprite2D
 @onready var name_label = $NameLabel
 @onready var camera = $Camera2D
@@ -19,35 +23,46 @@ var stun_timer = 0.0
 @onready var collision_shape = $CollisionShape2D
 @onready var press_space_label = $PressSpaceLabel
 @onready var is_occupied_label = $IsOccupiedLabel
+
+# Audio
 @onready var footstep_player: AudioStreamPlayer2D = $FootstepPlayer
 @onready var chest_audio_player: AudioStreamPlayer2D = $ChestAudioPlayer
 @onready var step_timer: Timer = $StepTimer
 
+# Constantes de gameplay
 const KILL_RANGE = 15.0
 const REVIVE_RANGE = 25.0
 const HIDE_DURATION = 10.0
 const HIDE_COOLDOWN = 10.0
-const REPORT_RANGE = 20.0 
-const STUN_RADIUS_ON_EXIT = 50.0 
-const STUN_DURATION = 2.0       
+const REPORT_RANGE = 60.0 
+const STUN_RADIUS_ON_EXIT = 60.0 
+const STUN_DURATION = 2.5        
 
+# --- POLICE ---
+const FONT = preload("res://assets/fonts/Daydream DEMO.otf")
+
+# Timers pour le système de cachette
 var hide_timer = 0.0
 var cooldown_timer = 0.0
 var can_hide = true
 var cooldown_label: Label
 var hide_label: Label
 
+# Système de report
 var nearby_corpse = false
 
+# Audio footsteps
 var sfx_grass = preload("res://sfx_grass.tres")
 var sfx_wood = preload("res://sfx_wood.tres")
 var level_tilemap: TileMap = null
 var last_valid_tile_id: int = 0
 
+# Helpers multiplayer
 func _my_id() -> int: return get_multiplayer_authority()
 func _is_authority() -> bool: return is_multiplayer_authority()
 func _get_players_root(): return get_tree().get_root().get_node_or_null("TestScene/Players")
 
+# Initialisation du joueur
 func _ready() -> void:
 	if not get_tree().get_multiplayer().has_multiplayer_peer():
 		set_process_mode(PROCESS_MODE_DISABLED)
@@ -69,24 +84,33 @@ func _ready() -> void:
 		if press_space_label: press_space_label.queue_free()
 		if is_occupied_label: is_occupied_label.queue_free()
 
+# Gestion des labels UI
 func _hide_labels() -> void:
 	if is_instance_valid(press_space_label): press_space_label.visible = false
 	if is_instance_valid(is_occupied_label): is_occupied_label.visible = false
 
+# Création des labels au-dessus des coffres
 func _create_chest_label(color: Color):
 	var chest = _find_chest_area()
 	if not chest: return null
+	
 	var label = Label.new()
 	label.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	label.scale = Vector2(0.5, 0.5)
+	
+	label.add_theme_font_override("font", FONT)
+	label.add_theme_font_size_override("font_size", 32) 
+	
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.grow_horizontal = Control.GROW_DIRECTION_BOTH
 	label.anchors_preset = Control.PRESET_CENTER_TOP
-	label.position = Vector2(0, -30)
+	label.position = Vector2(0, -35)
+	label.scale = Vector2(0.25, 0.25) 
+	
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color.BLACK)
-	label.add_theme_constant_override("outline_size", 4)
+	label.add_theme_constant_override("outline_size", 8)
+	
 	chest.add_child(label)
 	return label
 
@@ -108,7 +132,8 @@ func _remove_hide_label() -> void:
 	if hide_label and is_instance_valid(hide_label): hide_label.queue_free()
 	hide_label = null
 
-# --- REPORT ---
+# --- SYSTÈME DE REPORT ---
+
 func _show_report_label() -> void:
 	var scene = get_tree().get_root().get_node_or_null("TestScene")
 	if scene and scene.has_method("set_report_label_visible"):
@@ -122,7 +147,7 @@ func _remove_report_label() -> void:
 func _try_report_body() -> void:
 	if not nearby_corpse or is_dead: return
 	var scene = get_tree().get_root().get_node_or_null("TestScene")
-	if scene and not scene.can_report: return  # Vérifie si les reports sont activés
+	if scene and not scene.can_report: return
 	rpc_id(1, "report_body_to_server")
 
 @rpc("any_peer", "call_local", "reliable")
@@ -130,37 +155,26 @@ func report_body_to_server():
 	if not multiplayer.is_server(): return
 	var scene = get_tree().get_root().get_node_or_null("TestScene")
 	if scene and scene.has_method("trigger_emergency_meeting"):
-		scene.trigger_emergency_meeting()
+		scene.trigger_emergency_meeting(multiplayer.get_remote_sender_id())
 
 func _update_visuals() -> void:
 	if not name_label: return
-	
-	# L'ID du joueur que ce script contrôle (la cible)
 	var target_id = get_multiplayer_authority()
-	# L'ID de celui qui regarde l'écran (moi)
 	var viewer_id = multiplayer.get_unique_id()
+	
 	var data = NetworkHandler.players.get(target_id, {})
 	var text = data.get("name", "Player %s" % target_id)
-	var show_role = false
 	
-	if target_id == viewer_id:
-		show_role = true
-		
-	elif NetworkHandler.is_werewolf(viewer_id) and NetworkHandler.is_werewolf(target_id):
-		show_role = true
-		
-	elif NetworkHandler.is_player_dead(viewer_id): show_role = true
+	var show_role = false
+	if target_id == viewer_id: show_role = true
+	elif NetworkHandler.is_werewolf(viewer_id) and NetworkHandler.is_werewolf(target_id): show_role = true
 	
 	if show_role and data.has("role"):
 		text += " (%s)" % data["role"]
-	# -----------------------------------
 	
 	name_label.text = text
-	
 	var color = data.get("color", Color.WHITE)
-	
 	if is_dead: color.a = 0.5 
-	
 	anim.modulate = color
 	name_label.modulate = color
 
@@ -173,7 +187,6 @@ func _process(delta: float) -> void:
 	
 	if not _is_authority(): return
 	
-	# BLOQUAGE GAMEPLAY SI INTERMISSION/VOTE/FIN
 	if not NetworkHandler.is_gameplay_active:
 		velocity = Vector2.ZERO
 		rpc("_net_state", global_position, Vector2.ZERO, last_move_dir)
@@ -425,6 +438,7 @@ func _try_revive_nearby_player() -> void:
 func play_death_animation() -> void:
 	is_dead = true
 	receive_stun(0)
+	
 	collision_shape.set_deferred("disabled", true)
 	chest_area.monitoring = false
 	_hide_labels()
@@ -445,10 +459,7 @@ func revive_character() -> void:
 	anim.visible = true
 	name_label.visible = true
 	anim.play("idle-down")
-	
-	
 
-# RPC: Force la position du joueur (appelé par le serveur après un vote)
 @rpc("call_local", "reliable")
 func force_teleport(new_pos: Vector2):
 	global_position = new_pos

@@ -1,6 +1,6 @@
 extends Control
 
-@onready var label = $Label # Si tu en as mis un
+@onready var label = $LoadingLabel 
 
 func _ready():
 
