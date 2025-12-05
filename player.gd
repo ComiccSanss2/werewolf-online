@@ -39,9 +39,9 @@ var stun_timer = 0.0
 const KILL_RANGE = 15.0
 const REVIVE_RANGE = 25.0
 const HIDE_DURATION = 10.0
-const HIDE_COOLDOWN = 10.0
-const REPORT_RANGE = 60.0 
-const STUN_RADIUS_ON_EXIT = 60.0 
+const HIDE_COOLDOWN = 25.0
+const REPORT_RANGE = 40.0 
+const STUN_RADIUS_ON_EXIT = 40.0 
 const STUN_DURATION = 2.5        
 
 const FONT = preload("res://assets/fonts/Daydream DEMO.otf")

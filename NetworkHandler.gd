@@ -23,9 +23,9 @@ signal game_over(winning_team)
 
 const DEFAULT_PORT = 8910
 const MAX_PLAYERS = 15
-const ROLE_VILLAGEOIS = "Villager"
+const ROLE_VILLAGER = "Villager"
 const ROLE_WEREWOLF = "Werewolf"
-const ROLE_SORCIERE = "Witch"
+const ROLE_WITCH = "Witch"
 
 const PLAYER_COLORS = [
 	Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW, Color.ORANGE,
@@ -123,10 +123,10 @@ func _assign_roles() -> void:
 			players[pid]["role"] = ROLE_WEREWOLF
 			players[pid]["has_killed"] = false
 		elif i == num_wolves and n >= 3:
-			players[pid]["role"] = ROLE_SORCIERE
+			players[pid]["role"] = ROLE_WITCH
 			players[pid]["has_revived"] = false
 		else:
-			players[pid]["role"] = ROLE_VILLAGEOIS
+			players[pid]["role"] = ROLE_VILLAGER
 	
 	rpc("_sync_lobby_data", players)
 	
@@ -197,7 +197,7 @@ func check_task_win_condition():
 	
 	# S'il y a des villageois et qu'ils ont tous fini
 	if villager_count > 0 and all_finished:
-		rpc("rpc_game_over", "VILLAGEOIS (TÂCHES)")
+		rpc("rpc_game_over", "VILLAGERS (TASKS)")
 
 # --- COFFRES ---
 @rpc("any_peer", "call_local", "reliable")
@@ -232,9 +232,9 @@ func receive_chest_occupancy_state(is_occupied: bool):
 	if player: player.update_chest_ui(is_occupied)
 
 # --- GETTERS ---
-func get_player_role(id: int) -> String: return players.get(id, {}).get("role", ROLE_VILLAGEOIS)
+func get_player_role(id: int) -> String: return players.get(id, {}).get("role", ROLE_VILLAGER)
 func is_werewolf(id: int) -> bool: return get_player_role(id) == ROLE_WEREWOLF
-func is_sorciere(id: int) -> bool: return get_player_role(id) == ROLE_SORCIERE
+func is_sorciere(id: int) -> bool: return get_player_role(id) == ROLE_WITCH
 func is_player_dead(id: int) -> bool: return players.get(id, {}).get("is_dead", false)
 func get_alive_players() -> Array: return players.keys().filter(func(id): return not is_player_dead(id))
 
@@ -341,8 +341,8 @@ func check_win_condition():
 			if players[id]["role"] == ROLE_WEREWOLF: wolves += 1
 			else: villagers += 1
 	
-	if wolves == 0: rpc("rpc_game_over", "VILLAGEOIS")
-	elif wolves >= villagers: rpc("rpc_game_over", "LOUPS-GAROUS")
+	if wolves == 0: rpc("rpc_game_over", "VILLAGERS")
+	elif wolves >= villagers: rpc("rpc_game_over", "WEREWOLF")
 
 @rpc("call_local", "reliable")
 func rpc_game_over(winner: String):
