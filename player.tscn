@@ -1,10 +1,11 @@
-[gd_scene load_steps=13 format=3 uid="uid://yscgsx5lmjcl"]
+[gd_scene load_steps=16 format=3 uid="uid://yscgsx5lmjcl"]
 
 [ext_resource type="Script" uid="uid://bok8xx2xd78ek" path="res://player.gd" id="1_4flbx"]
 [ext_resource type="SpriteFrames" uid="uid://dg662mg2wndr5" path="res://player_frames.tres" id="2_i3pqv"]
 [ext_resource type="Texture2D" uid="uid://b8fenhq7841n2" path="res://assets/stun.png" id="3_hqtel"]
 [ext_resource type="FontFile" uid="uid://cjefwub6iqqgd" path="res://assets/fonts/Daydream DEMO.otf" id="4_sweqy"]
 [ext_resource type="AudioStream" uid="uid://bkv2uxw3l8r1q" path="res://assets/sfx/hidechest.wav" id="5_sweqy"]
+[ext_resource type="Texture2D" uid="uid://nh7ase5ytes1" path="res://assets/arrow.png" id="6_2hs0m"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_sweqy"]
 atlas = ExtResource("3_hqtel")
@@ -41,6 +42,15 @@ font = ExtResource("4_sweqy")
 font_size = 10
 font_color = Color(0.9541288, 0.56332564, 0.22229916, 1)
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_2hs0m"]
+radius = 12.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_1jxqw"]
+font = ExtResource("4_sweqy")
+font_color = Color(0.9980623, 0.5076632, 0.36010438, 1)
+outline_size = 4
+outline_color = Color(0, 0, 0, 1)
+
 [node name="Player" type="CharacterBody2D"]
 y_sort_enabled = true
 collision_mask = 3
@@ -65,7 +75,7 @@ position = Vector2(-0.375, 5)
 shape = SubResource("RectangleShape2D_bwjto")
 
 [node name="Camera2D" type="Camera2D" parent="."]
-zoom = Vector2(11, 11)
+zoom = Vector2(10, 10)
 
 [node name="NameLabel" type="Label" parent="."]
 offset_left = -6.0
@@ -104,13 +114,45 @@ text = "Hiding spot is occupied."
 label_settings = SubResource("LabelSettings_2hs0m")
 
 [node name="FootstepPlayer" type="AudioStreamPlayer2D" parent="."]
+volume_db = 3.0
 max_distance = 90.0
 max_polyphony = 3
 
 [node name="ChestAudioPlayer" type="AudioStreamPlayer2D" parent="."]
 stream = ExtResource("5_sweqy")
+volume_db = -3.0
 max_distance = 90.0
 
 [node name="StepTimer" type="Timer" parent="."]
 wait_time = 0.35
 one_shot = true
+
+[node name="TaskProgressBar" type="ProgressBar" parent="."]
+offset_left = -34.0
+offset_top = -15.0
+offset_right = 52.0
+offset_bottom = 12.0
+scale = Vector2(0.3, 0.3)
+
+[node name="QuestArrow" type="Sprite2D" parent="."]
+visible = false
+texture_filter = 1
+position = Vector2(0, -26)
+scale = Vector2(0.625, 0.5625)
+texture = ExtResource("6_2hs0m")
+
+[node name="TaskDetector" type="Area2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="TaskDetector"]
+shape = SubResource("CircleShape2D_2hs0m")
+
+[node name="InteractionLabel" type="Label" parent="."]
+visible = false
+texture_filter = 1
+offset_left = -14.000001
+offset_top = 23.0
+offset_right = 82.0
+offset_bottom = 49.0
+scale = Vector2(0.3, 0.3)
+text = "Hold [E]"
+label_settings = SubResource("LabelSettings_1jxqw")

@@ -1,4 +1,4 @@
-[gd_scene load_steps=27 format=3 uid="uid://sjbtxtro5v83"]
+[gd_scene load_steps=28 format=3 uid="uid://sjbtxtro5v83"]
 
 [ext_resource type="Script" uid="uid://dfiypymj4ct8q" path="res://lobby.gd" id="1_ll2xe"]
 [ext_resource type="Texture2D" uid="uid://cottpgqkao35a" path="res://assets/backgroundmenu.png" id="2_1gg6n"]
@@ -63,6 +63,10 @@ bg_color = Color(0, 0, 0, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_wjc17"]
 bg_color = Color(0, 0, 0, 1)
+
+[sub_resource type="LabelSettings" id="LabelSettings_g30ku"]
+font = ExtResource("3_x4164")
+font_size = 19
 
 [node name="Lobby" type="Control"]
 layout_mode = 3
@@ -247,6 +251,29 @@ scale = Vector2(0.4, 0.4)
 texture_normal = ExtResource("9_gm5bj")
 texture_pressed = ExtResource("10_g30ku")
 texture_hover = ExtResource("10_g30ku")
+
+[node name="TutorialLabel" type="Label" parent="CanvasLayer"]
+texture_filter = 1
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -589.0
+offset_top = -243.0
+offset_right = -129.0
+offset_bottom = -42.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "PRESS   E   to   interact
+PRESS   T   to   report
+PRESS   SPACE   to hide
+PRESS   ARROW KEYS   to MOVE
+"
+label_settings = SubResource("LabelSettings_g30ku")
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="SFX_Player" type="AudioStreamPlayer" parent="."]
 volume_db = -18.571

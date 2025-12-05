@@ -1,13 +1,14 @@
 extends Node2D
 
-# Scène principale du jeu - Gère les joueurs, le timer, les votes et les phases
-
 var PlayerScene = preload("res://player.tscn")
 var player_sprite_frames = preload("res://player_frames.tres")
 
 @onready var players_root = $Players
 @onready var spawn_points = $SpawnPoints.get_children()
 @onready var bodies_container = $DeadBodies
+
+# RÉFÉRENCE AU DOSSIER DES TÂCHES MANUELLES
+@onready var tasks_container = $Tasks 
 
 # UI et timers
 @onready var game_timer: Timer = $GameTimer
@@ -18,47 +19,54 @@ var player_sprite_frames = preload("res://player_frames.tres")
 @onready var game_over_ui: Control = $UI_Layer/GameOverScreen
 @onready var announcement_label: Label = $UI_Layer/AnnouncementLabel 
 @onready var report_label_ui: Label = $UI_Layer/ReportLabel
-# --- NOUVEAU LABEL ---
 @onready var report_announce_label: Label = $UI_Layer/ReportAnnounceLabel
-# ---------------------
+@onready var task_counter_label: Label = Label.new()
 
-# --- AUDIO ---
+# AUDIO
 @onready var game_ost_player: AudioStreamPlayer = $GameOSTPlayer
 @onready var voting_ost_player: AudioStreamPlayer = $VotingOSTPlayer
 
-# Constantes de durée
-const GAME_DURATION = 180.0 
-const VOTE_DURATION = 60.0 
+const GAME_DURATION = 120.0 
+const VOTE_DURATION = 120.0 
 const REPORT_DELAY = 15.0 
+const FONT = preload("res://assets/fonts/Daydream DEMO.otf")
 
-# Variables de jeu
 var current_votes: Dictionary = {}
 var is_voting_phase: bool = false
 var is_intermission_phase: bool = false
 var can_report: bool = false
 
-# ========== Initialisation ==========
+# --- VARIABLES QUÊTES ---
+var rock_locations: Array[Vector2] = []
+var plant_locations: Array[Vector2] = []
 
 func _ready() -> void:
+	get_tree().multiplayer_poll = true
 	self.name = "TestScene"
 	print("--- TEST SCENE LOADED ---")
 	
 	var mp = get_tree().get_multiplayer()
 	
-	# Nettoyage des connexions existantes
+	# ... (Code de connexion signal inchangé) ...
 	if mp.peer_connected.is_connected(_on_player_connected): mp.peer_connected.disconnect(_on_player_connected)
 	if mp.peer_disconnected.is_connected(_on_player_disconnected): mp.peer_disconnected.disconnect(_on_player_disconnected)
 	if mp.server_disconnected.is_connected(_on_server_disconnected): mp.server_disconnected.disconnect(_on_server_disconnected)
-	
 	mp.peer_connected.connect(_on_player_connected)
 	mp.peer_disconnected.connect(_on_player_disconnected)
 	mp.server_disconnected.connect(_on_server_disconnected)
+	if not NetworkHandler.game_over.is_connected(_on_game_over): NetworkHandler.game_over.connect(_on_game_over)
 	
-	# Connexion au signal game_over
-	if not NetworkHandler.game_over.is_connected(_on_game_over):
-		NetworkHandler.game_over.connect(_on_game_over)
+	# Setup UI
+	ui_layer.add_child(task_counter_label)
+	task_counter_label.add_theme_font_override("font", FONT)
+	task_counter_label.add_theme_font_size_override("font_size", 16)
+	task_counter_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	task_counter_label.add_theme_constant_override("outline_size", 4)
+	task_counter_label.anchors_preset = Control.PRESET_TOP_RIGHT
+	task_counter_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+	task_counter_label.position = Vector2(1152 - 300, 20) 
+	task_counter_label.size = Vector2(280, 100)
 	
-	# Configuration de l'UI
 	voting_ui.visible = false
 	game_over_ui.visible = false
 	timer_label.visible = true
@@ -67,27 +75,42 @@ func _ready() -> void:
 	if report_announce_label: report_announce_label.visible = false
 	
 	if voting_ui.has_signal("vote_cast"):
-		if not voting_ui.vote_cast.is_connected(_on_local_player_voted):
-			voting_ui.vote_cast.connect(_on_local_player_voted)
-	
+		if not voting_ui.vote_cast.is_connected(_on_local_player_voted): voting_ui.vote_cast.connect(_on_local_player_voted)
 	if game_over_ui.has_signal("go_to_menu"):
-		if not game_over_ui.go_to_menu.is_connected(_on_go_back_to_menu):
-			game_over_ui.go_to_menu.connect(_on_go_back_to_menu)
+		if not game_over_ui.go_to_menu.is_connected(_on_go_back_to_menu): game_over_ui.go_to_menu.connect(_on_go_back_to_menu)
 	
-	# Configuration des timers (serveur uniquement)
+	# --- ENREGISTREMENT DES TACHES MANUELLES ---
+	_register_manual_tasks()
+	# -------------------------------------------
+	
 	if mp.is_server():
-		if not game_timer.timeout.is_connected(_on_game_timer_ended):
-			game_timer.timeout.connect(_on_game_timer_ended)
-		if not voting_timer.timeout.is_connected(_on_voting_timer_ended):
-			voting_timer.timeout.connect(_on_voting_timer_ended)
+		if not game_timer.timeout.is_connected(_on_game_timer_ended): game_timer.timeout.connect(_on_game_timer_ended)
+		if not voting_timer.timeout.is_connected(_on_voting_timer_ended): voting_timer.timeout.connect(_on_voting_timer_ended)
 		game_timer.one_shot = true
 		voting_timer.one_shot = true
-		
 		_handle_new_player_ready(1)
 		start_game_timer()
 	else:
 		await get_tree().process_frame
 		rpc_id(1, "client_ready_for_game")
+
+# --- NOUVELLE FONCTION DE SCAN SIMPLE ---
+func _register_manual_tasks():
+	rock_locations.clear()
+	plant_locations.clear()
+	
+	# On regarde ce qu'il y a dans le dossier "Tasks"
+	if tasks_container:
+		for task in tasks_container.get_children():
+			# On vérifie si c'est bien une tache avec le script task_zone.gd
+			if "task_type" in task:
+				if task.task_type == "rock":
+					rock_locations.append(task.global_position)
+				elif task.task_type == "water":
+					plant_locations.append(task.global_position)
+	
+	print("TÂCHES ENREGISTRÉES : %d Cailloux, %d Plantes." % [rock_locations.size(), plant_locations.size()])
+
 
 # ========== Boucle principale ==========
 
@@ -99,25 +122,45 @@ func _process(_delta: float) -> void:
 		t = voting_timer.time_left
 		col = Color.YELLOW
 		timer_label.text = "VOTE: %02d" % int(t)
+		task_counter_label.visible = false
 	elif is_intermission_phase:
 		t = voting_timer.time_left
 		col = Color.ORANGE
 		timer_label.text = "STARTING: %d" % int(t)
+		task_counter_label.visible = false
 	else:
 		if not game_timer.is_stopped():
 			t = game_timer.time_left
 			timer_label.text = "%02d:%02d" % [floor(t/60), int(t)%60]
 			if t < 10: col = Color.RED
+		
+		# --- MISE A JOUR UI TACHES ---
+		task_counter_label.visible = true
+		if NetworkHandler.players_tasks_progress.has(multiplayer.get_unique_id()):
+			var prog = NetworkHandler.players_tasks_progress[multiplayer.get_unique_id()]
+			var r = prog["rocks"]
+			var w = prog["water"]
+			
+			var txt = "TASKS:\nROCKS: %d/%d\nWATERING: %d/%d" % [r, NetworkHandler.GOAL_ROCKS, w, NetworkHandler.GOAL_WATER]
+			
+			if prog["finished"]:
+				txt += "\n(COMPLETED)"
+				task_counter_label.modulate = Color.GREEN
+			else:
+				task_counter_label.modulate = Color.WHITE
+				
+			task_counter_label.text = txt
+		else:
+			task_counter_label.text = "TASKS:\nNONE (Werewolf)"
+			task_counter_label.modulate = Color.RED
 	
 	timer_label.modulate = col
-
-# ========== Gestion de l'UI contextuelle ==========
 
 func set_report_label_visible(is_visible: bool):
 	if report_label_ui:
 		report_label_ui.visible = is_visible
 
-# ========== GESTION AUDIO (TRANSITIONS) ==========
+# ========== GESTION AUDIO ==========
 
 func _transition_music(music_in: AudioStreamPlayer, music_out: AudioStreamPlayer, duration: float):
 	const TARGET_DB_IN = -10.0 
@@ -185,6 +228,10 @@ func start_game_timer():
 	if report_label_ui: report_label_ui.visible = false
 	if report_announce_label: report_announce_label.visible = false
 	
+	# Initialisation des quêtes au début du jeu
+	if multiplayer.is_server():
+		NetworkHandler.init_tasks_for_game()
+	
 	NetworkHandler.reset_night_actions()
 	game_timer.start(GAME_DURATION)
 	rpc("sync_game_timer", GAME_DURATION)
@@ -221,39 +268,30 @@ func _on_game_timer_ended():
 
 # ========== REPORT SYSTEM ==========
 
-# Déclenche une réunion d'urgence
-# MODIFIÉ : Accepte maintenant l'ID du reporter
 func trigger_emergency_meeting(reporter_id: int):
 	if not multiplayer.is_server(): return
 	if not can_report: return
 	
-	# Arrêt du jeu
 	game_timer.stop()
 	current_votes.clear()
 	
-	# Lancement de la séquence d'annonce
 	rpc("start_report_sequence", reporter_id)
 
-# NOUVEAU RPC : Séquence d'annonce de report (Freeze + Texte + Délai)
 @rpc("call_local", "reliable")
 func start_report_sequence(reporter_id: int):
-	# 1. On fige tout le monde
 	NetworkHandler.is_gameplay_active = false
 	is_voting_phase = false
 	is_intermission_phase = false
 	
-	# 2. On récupère le nom
 	var reporter_name = "Unknown"
 	if NetworkHandler.players.has(reporter_id):
 		reporter_name = NetworkHandler.players[reporter_id]["name"]
 	
-	# 3. On affiche le Label au milieu
 	if report_announce_label:
 		report_announce_label.text = "%s HAS REPORTED A CORPSE" % reporter_name
 		report_announce_label.modulate = Color.RED
 		report_announce_label.visible = true
 		
-	# 4. Le serveur attend 3 secondes puis lance le vote
 	if multiplayer.is_server():
 		await get_tree().create_timer(3.0).timeout
 		rpc("start_voting_phase")
@@ -262,7 +300,6 @@ func start_report_sequence(reporter_id: int):
 
 @rpc("call_local", "reliable")
 func start_voting_phase():
-	# On cache l'annonce de report
 	if report_announce_label: report_announce_label.visible = false
 	
 	NetworkHandler.is_gameplay_active = false
@@ -285,11 +322,8 @@ func start_voting_phase():
 		voting_ui.visible = false
 		return
 
-	var alive = {}
-	for id in NetworkHandler.players:
-		if not NetworkHandler.is_player_dead(id):
-			alive[id] = NetworkHandler.players[id]
-	voting_ui.setup_voting(alive)
+	# On passe tous les joueurs pour le vote (morts grisés)
+	voting_ui.setup_voting(NetworkHandler.players)
 	voting_ui.visible = true
 
 @rpc("call_local", "reliable")
@@ -361,22 +395,26 @@ func _resolve_voting_results():
 		var p_name = p_data.get("name", "Inconnu")
 		var p_role = p_data.get("role", "Inconnu")
 		NetworkHandler.eliminate_player_by_vote(elim)
-		rpc("rpc_voting_completed", elim, false, p_name)
+		rpc("rpc_voting_completed", elim, false, p_name, p_role)
 	else:
-		rpc("rpc_voting_completed", -1, true, "")
+		rpc("rpc_voting_completed", -1, true, "", "")
 	
 	rpc("start_intermission_phase")
 
 @rpc("call_local", "reliable")
-func rpc_voting_completed(_elim_id: int, tie: bool, player_name: String):
+func rpc_voting_completed(_elim_id: int, tie: bool, player_name: String, player_role: String):
 	voting_ui.visible = false
 	is_voting_phase = false
 	
 	if announcement_label:
 		if tie:
-			announcement_label.text = "DRAW - NO ONE HAS BEEN ELIMINATED"
+			announcement_label.text = "DRAW - NO ONE ELIMINATED"
+			announcement_label.modulate = Color.WHITE
 		elif _elim_id != -1:
-			announcement_label.text = "%s GOT ELIMINATED !" % player_name
+			announcement_label.text = "%s was %s !" % [player_name, player_role]
+			if player_role == "werewolf": announcement_label.modulate = Color.RED
+			else: announcement_label.modulate = Color.GREEN
+		
 		announcement_label.visible = true
 
 # ========== Gestion fin de partie ==========
@@ -393,6 +431,8 @@ func _on_game_over(winner_role: String):
 	voting_ui.visible = false
 	if report_label_ui: report_label_ui.visible = false
 	if report_announce_label: report_announce_label.visible = false
+	if task_counter_label: task_counter_label.visible = false
+	
 	game_over_ui.show_victory(winner_role)
 
 func _on_server_disconnected():
@@ -409,6 +449,8 @@ func _on_server_disconnected():
 	timer_label.visible = false
 	if report_label_ui: report_label_ui.visible = false
 	if report_announce_label: report_announce_label.visible = false
+	if task_counter_label: task_counter_label.visible = false
+	
 	game_over_ui.show_disconnect()
 
 func _on_go_back_to_menu():

@@ -178,9 +178,8 @@ offset_right = 230.0
 offset_bottom = 116.0
 grow_horizontal = 2
 grow_vertical = 0
-text = "PRESS   E   to kill
-PRESS   R   to revive
-PRESS   T   to report
+text = "PRESS   E   to   interact
+PRESS   T   to   report
 PRESS   SPACE   to hide
 PRESS   ARROW KEYS   to MOVE
 "

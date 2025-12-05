@@ -24,6 +24,12 @@ var stun_timer = 0.0
 @onready var press_space_label = $PressSpaceLabel
 @onready var is_occupied_label = $IsOccupiedLabel
 
+# --- NOEUDS TACHES ---
+@onready var task_progress_bar = $TaskProgressBar
+@onready var quest_arrow = $QuestArrow 
+@onready var task_detector = $TaskDetector 
+@onready var interaction_label = $InteractionLabel 
+
 # Audio
 @onready var footstep_player: AudioStreamPlayer2D = $FootstepPlayer
 @onready var chest_audio_player: AudioStreamPlayer2D = $ChestAudioPlayer
@@ -38,15 +44,23 @@ const REPORT_RANGE = 60.0
 const STUN_RADIUS_ON_EXIT = 60.0 
 const STUN_DURATION = 2.5        
 
-# --- POLICE ---
 const FONT = preload("res://assets/fonts/Daydream DEMO.otf")
 
-# Timers pour le système de cachette
+# Timers
 var hide_timer = 0.0
 var cooldown_timer = 0.0
 var can_hide = true
 var cooldown_label: Label
 var hide_label: Label
+
+# Variables Tâches
+var is_doing_task = false
+var current_task_type = ""
+var current_task_time = 0.0
+var target_task_time = 0.0
+var current_task_zone = null 
+var last_completed_task_zone = null # Anti-spam
+var last_completed_task_type = ""
 
 # Système de report
 var nearby_corpse = false
@@ -70,10 +84,19 @@ func _ready() -> void:
 	
 	camera.enabled = _is_authority()
 	level_tilemap = get_tree().get_root().get_node_or_null("TestScene/TileMap_Interactions/TileMap")
+	
 	chest_area.area_entered.connect(_on_area_entered, 4)
 	chest_area.area_exited.connect(_on_area_exited, 4)
 	
+	if task_detector:
+		task_detector.area_entered.connect(_on_task_area_entered)
+		task_detector.area_exited.connect(_on_task_area_exited)
+	
+	# Masquage par défaut
 	if stun_visual: stun_visual.visible = false
+	if task_progress_bar: task_progress_bar.visible = false
+	if quest_arrow: quest_arrow.visible = false
+	if interaction_label: interaction_label.visible = false
 	
 	_update_visuals()
 	NetworkHandler.lobby_players_updated.connect(func(_p): _update_visuals())
@@ -84,33 +107,186 @@ func _ready() -> void:
 		if press_space_label: press_space_label.queue_free()
 		if is_occupied_label: is_occupied_label.queue_free()
 
-# Gestion des labels UI
+# --- DETECTION DES ZONES (Automatique via Area2D) ---
+
+func _on_task_area_entered(area):
+	if not _is_authority(): return
+	# On vérifie si l'area a la métadonnée "task" (mise par task_zone.gd)
+	if area.has_meta("task"):
+		current_task_zone = area
+		
+		# On affiche "HOLD [E]" si la tâche n'est pas celle qu'on vient de finir
+		if is_instance_valid(interaction_label) and area != last_completed_task_zone:
+			interaction_label.text = "HOLD [E]"
+			interaction_label.visible = true
+
+func _on_task_area_exited(area):
+	if not _is_authority(): return
+	if area == current_task_zone:
+		current_task_zone = null
+		
+		# On cache le label
+		if is_instance_valid(interaction_label):
+			interaction_label.visible = false
+		
+		# Si on sort en faisant la tâche, on annule
+		if is_doing_task: _cancel_task()
+
+# --- GESTION INPUT (TOUCHE E) ---
+
+func _handle_task_interaction(delta: float):
+	# On utilise la touche physique E directement (pour le maintien)
+	if Input.is_key_pressed(KEY_E): 
+		if not is_doing_task:
+			# Si on est dans une zone valide, on lance
+			if current_task_zone != null:
+				_start_task(current_task_zone)
+		else:
+			# On continue de progresser
+			_process_task(delta)
+	else:
+		# Relâché -> Annulation
+		if is_doing_task: 
+			_cancel_task()
+
+func _start_task(zone):
+	# Anti-Spam : on ne peut pas refaire la même tâche tout de suite
+	if zone == last_completed_task_zone: return
+
+	var my_prog = NetworkHandler.players_tasks_progress.get(_my_id())
+	var type = zone.task_type 
+	var time = zone.task_duration
+	
+	# Vérification si déjà fini
+	if my_prog:
+		if type == "rock" and my_prog["rocks"] >= NetworkHandler.GOAL_ROCKS: return
+		if type == "water" and my_prog["water"] >= NetworkHandler.GOAL_WATER: return
+
+	is_doing_task = true
+	current_task_type = type
+	target_task_time = time
+	current_task_time = 0.0
+	
+	# On cache le "HOLD E" et on montre la barre
+	if interaction_label: interaction_label.visible = false
+	if task_progress_bar:
+		task_progress_bar.max_value = target_task_time
+		task_progress_bar.value = 0
+		task_progress_bar.visible = true
+	
+	velocity = Vector2.ZERO
+
+func _process_task(delta: float):
+	current_task_time += delta
+	if task_progress_bar: task_progress_bar.value = current_task_time
+	velocity = Vector2.ZERO # Bloque le mouvement
+	
+	if current_task_time >= target_task_time: 
+		_complete_task()
+
+func _cancel_task():
+	is_doing_task = false
+	current_task_time = 0.0
+	if task_progress_bar: task_progress_bar.visible = false
+	
+	# Si on est toujours dans la zone, on réaffiche "HOLD E"
+	if current_task_zone != null and interaction_label and current_task_zone != last_completed_task_zone:
+		interaction_label.visible = true
+			
+	current_task_type = ""
+
+func _complete_task():
+	last_completed_task_zone = current_task_zone
+	last_completed_task_type = current_task_type
+	
+	NetworkHandler.rpc_id(1, "report_task_completed", current_task_type)
+	_cancel_task()
+	
+	# On choisit une NOUVELLE cible aléatoire
+	_pick_random_quest_target()
+
+# --- LOGIQUE DE CIBLE ALÉATOIRE ---
+
+func _pick_random_quest_target():
+	var scene = get_tree().get_root().get_node_or_null("TestScene")
+	if not scene: return
+	
+	var my_prog = NetworkHandler.players_tasks_progress.get(_my_id())
+	if not my_prog: return
+
+	# Logique d'alternance
+	var target_type = ""
+	
+	if last_completed_task_type == "" or last_completed_task_type == "rock":
+		if my_prog["water"] < NetworkHandler.GOAL_WATER: target_type = "water"
+		elif my_prog["rocks"] < NetworkHandler.GOAL_ROCKS: target_type = "rock"
+	else:
+		if my_prog["rocks"] < NetworkHandler.GOAL_ROCKS: target_type = "rock"
+		elif my_prog["water"] < NetworkHandler.GOAL_WATER: target_type = "water"
+	
+	var targets = []
+	if target_type == "rock": targets = scene.rock_locations
+	elif target_type == "water": targets = scene.plant_locations
+	
+	if targets.size() > 0:
+		var valid_targets = []
+		for t in targets:
+			if last_completed_task_zone and is_instance_valid(last_completed_task_zone):
+				if t.distance_to(last_completed_task_zone.global_position) > 10.0:
+					valid_targets.append(t)
+			else:
+				valid_targets.append(t)
+		
+		if valid_targets.size() > 0:
+			current_arrow_target = valid_targets.pick_random() # On stocke la cible
+			_update_quest_arrow()
+		else:
+			quest_arrow.visible = false
+	else:
+		quest_arrow.visible = false
+
+# Variable pour stocker la cible actuelle (pour éviter qu'elle change à chaque frame)
+var current_arrow_target = Vector2.ZERO
+
+func _update_quest_arrow():
+	if not quest_arrow: return
+	
+	var my_prog = NetworkHandler.players_tasks_progress.get(_my_id())
+	if not my_prog or my_prog["finished"]:
+		quest_arrow.visible = false
+		return
+	
+	if current_arrow_target == Vector2.ZERO:
+		_pick_random_quest_target()
+	
+	if current_arrow_target != Vector2.ZERO:
+		quest_arrow.visible = true
+		quest_arrow.look_at(current_arrow_target)
+	else:
+		quest_arrow.visible = false
+
+# --- LABELS & UI ---
+
 func _hide_labels() -> void:
 	if is_instance_valid(press_space_label): press_space_label.visible = false
 	if is_instance_valid(is_occupied_label): is_occupied_label.visible = false
 
-# Création des labels au-dessus des coffres
 func _create_chest_label(color: Color):
 	var chest = _find_chest_area()
 	if not chest: return null
-	
 	var label = Label.new()
 	label.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	
 	label.add_theme_font_override("font", FONT)
 	label.add_theme_font_size_override("font_size", 32) 
-	
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	label.grow_horizontal = Control.GROW_DIRECTION_BOTH
-	label.anchors_preset = Control.PRESET_CENTER_TOP
+	label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 	label.position = Vector2(0, -35)
 	label.scale = Vector2(0.25, 0.25) 
-	
 	label.add_theme_color_override("font_color", color)
 	label.add_theme_color_override("font_outline_color", Color.BLACK)
 	label.add_theme_constant_override("outline_size", 8)
-	
 	chest.add_child(label)
 	return label
 
@@ -132,7 +308,7 @@ func _remove_hide_label() -> void:
 	if hide_label and is_instance_valid(hide_label): hide_label.queue_free()
 	hide_label = null
 
-# --- SYSTÈME DE REPORT ---
+# --- REPORT UI (Déléguée à TestScene) ---
 
 func _show_report_label() -> void:
 	var scene = get_tree().get_root().get_node_or_null("TestScene")
@@ -146,8 +322,6 @@ func _remove_report_label() -> void:
 
 func _try_report_body() -> void:
 	if not nearby_corpse or is_dead: return
-	var scene = get_tree().get_root().get_node_or_null("TestScene")
-	if scene and not scene.can_report: return
 	rpc_id(1, "report_body_to_server")
 
 @rpc("any_peer", "call_local", "reliable")
@@ -156,6 +330,8 @@ func report_body_to_server():
 	var scene = get_tree().get_root().get_node_or_null("TestScene")
 	if scene and scene.has_method("trigger_emergency_meeting"):
 		scene.trigger_emergency_meeting(multiplayer.get_remote_sender_id())
+
+# --- VISUELS ET PROCESS ---
 
 func _update_visuals() -> void:
 	if not name_label: return
@@ -185,8 +361,15 @@ func _process(delta: float) -> void:
 		stun_timer -= delta
 		if stun_timer <= 0: receive_stun(0)
 	
+	# Mise à jour flèche (Local)
+	if _is_authority() and not is_dead and not NetworkHandler.is_werewolf(_my_id()):
+		_update_quest_arrow()
+	else:
+		if quest_arrow: quest_arrow.visible = false
+	
 	if not _is_authority(): return
 	
+	# Bloquage global
 	if not NetworkHandler.is_gameplay_active:
 		velocity = Vector2.ZERO
 		rpc("_net_state", global_position, Vector2.ZERO, last_move_dir)
@@ -195,6 +378,7 @@ func _process(delta: float) -> void:
 	
 	if NetworkHandler.is_player_dead(_my_id()): is_dead = true
 	
+	# Stun
 	if is_stunned:
 		velocity = Vector2.ZERO
 		rpc("_net_state", global_position, Vector2.ZERO, last_move_dir)
@@ -206,10 +390,24 @@ func _process(delta: float) -> void:
 		_update_chest_state()
 		_update_corpse_state()
 		_handle_inputs()
+		
+		if not NetworkHandler.is_werewolf(_my_id()):
+			_handle_task_interaction(delta)
 	else:
+		# Si mort, on nettoie l'UI locale
 		if nearby_corpse:
 			nearby_corpse = false
 			_remove_report_label()
+		if interaction_label: interaction_label.visible = false
+		if task_progress_bar: task_progress_bar.visible = false
+	
+	# Freeze pendant la tâche
+	if is_doing_task:
+		velocity = Vector2.ZERO
+		move_and_slide()
+		rpc("_net_state", global_position, Vector2.ZERO, last_move_dir)
+		_update_animation()
+		return
 	
 	if is_hidden:
 		velocity = Vector2.ZERO
@@ -306,7 +504,10 @@ func _update_corpse_state() -> void:
 
 func _handle_inputs() -> void:
 	if not NetworkHandler.is_gameplay_active: return
-	if Input.is_action_just_pressed("ui_accept"): _try_hide_or_open_chest()
+	
+	if Input.is_action_just_pressed("ui_accept"): 
+		if is_in_chest: _try_hide_or_open_chest()
+	
 	if Input.is_action_just_pressed("kill"): _try_kill_nearby_player()
 	if Input.is_action_just_pressed("revive"): _try_revive_nearby_player()
 	if Input.is_action_just_pressed("report"): _try_report_body()
@@ -467,3 +668,6 @@ func force_teleport(new_pos: Vector2):
 	move_dir = Vector2.ZERO
 	if is_multiplayer_authority():
 		rpc("_net_state", new_pos, Vector2.ZERO, last_move_dir)
+	
+	if _is_authority() and not NetworkHandler.is_werewolf(_my_id()):
+		_update_quest_arrow()
