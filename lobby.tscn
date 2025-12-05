@@ -239,10 +239,10 @@ horizontal_alignment = 1
 [node name="ColorButton" type="TextureButton" parent="CanvasLayer"]
 texture_filter = 1
 layout_mode = 0
-offset_left = 1505.0
-offset_top = 146.0
-offset_right = 2171.0
-offset_bottom = 521.0
+offset_left = 1506.0
+offset_top = 118.0
+offset_right = 2172.0
+offset_bottom = 493.0
 scale = Vector2(0.4, 0.4)
 texture_normal = ExtResource("9_gm5bj")
 texture_pressed = ExtResource("10_g30ku")
