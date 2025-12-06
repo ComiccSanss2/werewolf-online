@@ -111,7 +111,7 @@ func _ready() -> void:
 
 func _on_task_area_entered(area):
 	if not _is_authority(): return
-	# On vérifie si l'area a la métadonnée "task" (mise par task_zone.gd)
+	if NetworkHandler.is_werewolf(_my_id()): return
 	if area.has_meta("task"):
 		current_task_zone = area
 		
@@ -355,65 +355,76 @@ func _update_visuals() -> void:
 	name_label.modulate = color
 
 func _process(delta: float) -> void:
+	# 1. Sécurité : Si pas connecté ou pas dans l'arbre, on arrête tout.
 	if not is_inside_tree() or not multiplayer.has_multiplayer_peer(): return
 	
+	# Gestion du Timer de Stun (LOCAL)
 	if is_stunned:
 		stun_timer -= delta
 		if stun_timer <= 0: receive_stun(0)
 	
-	# Mise à jour flèche (Local)
+	# 2. UI Locale : Mise à jour de la flèche de quête
+	# (Uniquement si on est le joueur local, vivant et pas loup-garou)
 	if _is_authority() and not is_dead and not NetworkHandler.is_werewolf(_my_id()):
 		_update_quest_arrow()
 	else:
 		if quest_arrow: quest_arrow.visible = false
 	
+	# 3. Autorité : Tout ce qui suit ne concerne que le joueur local
 	if not _is_authority(): return
 	
-	# Bloquage global
+	# 4. Blocage Global (Vote / Intermission / Fin de jeu)
+	# Si le jeu est en pause, on fige le mouvement mais on garde l'animation Idle
 	if not NetworkHandler.is_gameplay_active:
 		velocity = Vector2.ZERO
 		rpc("_net_state", global_position, Vector2.ZERO, last_move_dir)
 		_update_animation()
 		return
 	
+	# Vérification état de mort
 	if NetworkHandler.is_player_dead(_my_id()): is_dead = true
 	
-	# Stun
+	# 5. État Stun (Étourdi)
 	if is_stunned:
 		velocity = Vector2.ZERO
 		rpc("_net_state", global_position, Vector2.ZERO, last_move_dir)
 		_update_animation()
 		return
 
+	# 6. Logique des Vivants
 	if not is_dead:
 		_update_timers(delta)
 		_update_chest_state()
 		_update_corpse_state()
 		_handle_inputs()
 		
+		# Tâches (seulement si pas loup)
 		if not NetworkHandler.is_werewolf(_my_id()):
 			_handle_task_interaction(delta)
 	else:
-		# Si mort, on nettoie l'UI locale
+		# Nettoyage UI si mort
 		if nearby_corpse:
 			nearby_corpse = false
 			_remove_report_label()
 		if interaction_label: interaction_label.visible = false
 		if task_progress_bar: task_progress_bar.visible = false
 	
-	# Freeze pendant la tâche
+	# 7. État "En train de faire une tâche" (Freeze)
 	if is_doing_task:
+		anim.play("idle-down")
 		velocity = Vector2.ZERO
-		move_and_slide()
+		move_and_slide() # Important pour arrêter la glissade physique
 		rpc("_net_state", global_position, Vector2.ZERO, last_move_dir)
 		_update_animation()
 		return
 	
+	# 8. État Caché
 	if is_hidden:
 		velocity = Vector2.ZERO
 		move_and_slide()
 		return
 
+	# 9. Mouvement Normal
 	var input = Vector2(
 		Input.get_action_strength("ui_right") - Input.get_action_strength("ui_left"),
 		Input.get_action_strength("ui_down") - Input.get_action_strength("ui_up")
@@ -421,7 +432,9 @@ func _process(delta: float) -> void:
 	move_dir = input.normalized()
 	if move_dir != Vector2.ZERO: last_move_dir = move_dir
 
+	# Bonus de vitesse pour les spectateurs
 	var current_speed = speed * 1.5 if is_dead else speed
+	
 	velocity = move_dir * current_speed
 	move_and_slide()
 	

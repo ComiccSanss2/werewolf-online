@@ -477,6 +477,7 @@ font_size = 27
 font_color = Color(1, 0.40955335, 0.34002635, 1)
 outline_size = 4
 outline_color = Color(0, 0, 0, 1)
+shadow_size = 2
 
 [sub_resource type="LabelSettings" id="LabelSettings_g6y4b"]
 font = ExtResource("16_2dw41")
@@ -492,6 +493,9 @@ shadow_color = Color(0.24780053, 0.24780053, 0.24780053, 0.97)
 [node name="TestScene" type="Node2D"]
 y_sort_enabled = true
 script = ExtResource("1_uhqqe")
+
+[node name="CanvasModulate" type="CanvasModulate" parent="."]
+color = Color(0.050980393, 0.050980393, 0.101960786, 1)
 
 [node name="SpawnPoints" type="Node2D" parent="."]
 position = Vector2(18, -88)
@@ -566,148 +570,144 @@ replication_config = SubResource("SceneReplicationConfig_0k8yu")
 [node name="PointLight2D" type="PointLight2D" parent="."]
 z_index = 5
 position = Vector2(198, 63)
-energy = 1.5
-range_z_min = 0
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D2" type="PointLight2D" parent="."]
 position = Vector2(120, -17)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D3" type="PointLight2D" parent="."]
 position = Vector2(265, -17)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D4" type="PointLight2D" parent="."]
 position = Vector2(440, -17)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D5" type="PointLight2D" parent="."]
 position = Vector2(554, -64)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D8" type="PointLight2D" parent="."]
 position = Vector2(664, -33)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D9" type="PointLight2D" parent="."]
 position = Vector2(662, 143)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D12" type="PointLight2D" parent="."]
 position = Vector2(549, 142)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D13" type="PointLight2D" parent="."]
 position = Vector2(40, -97)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D14" type="PointLight2D" parent="."]
 position = Vector2(312, 319)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D15" type="PointLight2D" parent="."]
 position = Vector2(312, 432)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D16" type="PointLight2D" parent="."]
 position = Vector2(1016, 432)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D17" type="PointLight2D" parent="."]
 position = Vector2(1016, 318)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D18" type="PointLight2D" parent="."]
 position = Vector2(1033, 158)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D19" type="PointLight2D" parent="."]
 position = Vector2(936, 158)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D20" type="PointLight2D" parent="."]
 position = Vector2(936, -50)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
 
 [node name="PointLight2D21" type="PointLight2D" parent="."]
 position = Vector2(1032, -50)
-energy = 1.5
-range_z_min = -1
-range_z_max = 1
+scale = Vector2(0.4, 0.4)
+range_z_min = -4096
+range_z_max = 4096
 texture = ExtResource("12_oo8pe")
 texture_scale = 0.3
-
-[node name="DirectionalLight2D" type="DirectionalLight2D" parent="."]
-color = Color(0, 0, 0, 1)
-energy = 0.5
-blend_mode = 2
 
 [node name="UI_Layer" type="CanvasLayer" parent="."]
 
 [node name="AnnouncementLabel" type="Label" parent="UI_Layer"]
+z_index = 100
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -723,6 +723,7 @@ horizontal_alignment = 1
 visible = false
 
 [node name="TimerLabel" type="Label" parent="UI_Layer"]
+z_index = 100
 offset_left = 20.0
 offset_top = 20.0
 offset_right = 102.0
@@ -735,20 +736,24 @@ visible = false
 
 [node name="ReportLabel" type="Label" parent="UI_Layer"]
 visible = false
+z_index = 100
 texture_filter = 1
-anchors_preset = 5
+anchors_preset = 7
 anchor_left = 0.5
+anchor_top = 1.0
 anchor_right = 0.5
-offset_left = -116.0
-offset_top = 34.0
-offset_right = 116.0
-offset_bottom = 57.0
+anchor_bottom = 1.0
+offset_left = -313.5
+offset_top = -44.0
+offset_right = 313.5
 grow_horizontal = 2
+grow_vertical = 0
 text = "Appuyer [T] pour reporter"
 label_settings = SubResource("LabelSettings_2dw41")
 horizontal_alignment = 1
 
 [node name="ReportAnnounceLabel" type="Label" parent="UI_Layer"]
+z_index = 100
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
