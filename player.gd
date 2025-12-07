@@ -30,7 +30,18 @@ var stun_timer = 0.0
 @onready var task_detector = $TaskDetector 
 @onready var interaction_label = $InteractionLabel 
 
-# Audio
+# --- VOICE CHAT VARIABLES ---
+@onready var mic_input: AudioStreamPlayer = $MicInput
+@onready var voice_output: AudioStreamPlayer2D = $VoiceOutput
+@onready var voice_icon: Sprite2D = $VoiceIcon
+
+var audio_effect_capture: AudioEffectCapture
+var voice_playback: AudioStreamGeneratorPlayback
+const MIN_AMPLITUDE = 0.01 # Seuil de volume pour activer l'envoi
+# Taux d'échantillonnage pour le réseau (22050 est un bon compromis qualité/bande passante)
+const MIX_RATE = 22050 
+
+# Audio Footsteps
 @onready var footstep_player: AudioStreamPlayer2D = $FootstepPlayer
 @onready var chest_audio_player: AudioStreamPlayer2D = $ChestAudioPlayer
 @onready var step_timer: Timer = $StepTimer
@@ -65,7 +76,7 @@ var last_completed_task_type = ""
 # Système de report
 var nearby_corpse = false
 
-# Audio footsteps
+# Audio footsteps resources
 var sfx_grass = preload("res://sfx_grass.tres")
 var sfx_wood = preload("res://sfx_wood.tres")
 var level_tilemap: TileMap = null
@@ -98,6 +109,9 @@ func _ready() -> void:
 	if quest_arrow: quest_arrow.visible = false
 	if interaction_label: interaction_label.visible = false
 	
+	# Initialisation du Voice Chat
+	_setup_audio()
+	
 	_update_visuals()
 	NetworkHandler.lobby_players_updated.connect(func(_p): _update_visuals())
 	
@@ -106,6 +120,85 @@ func _ready() -> void:
 	else:
 		if press_space_label: press_space_label.queue_free()
 		if is_occupied_label: is_occupied_label.queue_free()
+
+# --- CONFIGURATION VOICE CHAT ---
+func _setup_audio():
+	if voice_icon: voice_icon.visible = false
+	
+	if _is_authority():
+		# --- Configuration LOCALE (Microphone) ---
+		mic_input.stream = AudioStreamMicrophone.new()
+		mic_input.play() # Commence à écouter le micro localement
+		
+		# On récupère l'effet "Capture" sur le bus "Record"
+		var idx = AudioServer.get_bus_index("Record")
+		if idx != -1:
+			# L'effet doit être à l'index 0 dans l'onglet Audio
+			audio_effect_capture = AudioServer.get_bus_effect(idx, 0)
+	else:
+		# --- Configuration DISTANTE (Sortie Audio) ---
+		mic_input.stop() # On coupe le micro sur les avatars distants
+		
+		# On configure le générateur pour jouer le son reçu
+		voice_output.stream = AudioStreamGenerator.new()
+		var generator = voice_output.stream as AudioStreamGenerator
+		generator.mix_rate = MIX_RATE
+		generator.buffer_length = 0.1 # Buffer court pour réduire la latence
+		
+		voice_output.play()
+		voice_playback = voice_output.get_stream_playback()
+
+# --- LOGIQUE VOICE CHAT ---
+func _process_voice_chat():
+	# 1. ENVOI (Joueur Local)
+	if _is_authority():
+		# Si on est mort, on ne parle pas (optionnel)
+		if is_dead: return 
+		if not audio_effect_capture: return
+		
+		# On vérifie si on a assez de frames capturées
+		if audio_effect_capture.can_get_buffer(512):
+			var buffer = audio_effect_capture.get_buffer(audio_effect_capture.get_frames_available())
+			
+			# Analyse du volume (Amplitude)
+			var max_amplitude = 0.0
+			for sample in buffer:
+				if abs(sample.x) > max_amplitude: max_amplitude = abs(sample.x)
+				if abs(sample.y) > max_amplitude: max_amplitude = abs(sample.y)
+			
+			# Si le son est assez fort, on l'envoie
+			if max_amplitude > MIN_AMPLITUDE:
+				voice_icon.visible = true
+				# Envoi via RPC "unreliable" (plus rapide, perte de paquets tolérée)
+				rpc("receive_voice_data", buffer)
+			else:
+				voice_icon.visible = false
+	
+	# 2. RECEPTION (Joueurs Distants - Visuel)
+	else:
+		# On affiche l'icône si le son joue
+		if voice_output.playing and is_instance_valid(voice_playback):
+			# On check s'il reste des frames à jouer dans le buffer
+			var frames_left = voice_playback.get_frames_available()
+			var buffer_len_frames = (voice_output.stream as AudioStreamGenerator).buffer_length * MIX_RATE
+			# Si le buffer n'est pas totalement vide, c'est qu'on parle
+			if frames_left < buffer_len_frames:
+				voice_icon.visible = true
+			else:
+				voice_icon.visible = false
+		else:
+			voice_icon.visible = false
+
+@rpc("any_peer", "call_remote", "unreliable")
+func receive_voice_data(buffer: PackedVector2Array):
+	# On ne joue pas son propre son
+	if _is_authority(): return
+	
+	if is_instance_valid(voice_playback):
+		# On pousse les données dans le générateur audio
+		if voice_playback.can_push_buffer(buffer.size()):
+			voice_playback.push_buffer(buffer)
+
 
 # --- DETECTION DES ZONES (Automatique via Area2D) ---
 
@@ -363,8 +456,10 @@ func _process(delta: float) -> void:
 		stun_timer -= delta
 		if stun_timer <= 0: receive_stun(0)
 	
-	# 2. UI Locale : Mise à jour de la flèche de quête
-	# (Uniquement si on est le joueur local, vivant et pas loup-garou)
+	# 2. UI Locale et Voice Chat 
+	# (Le voice chat doit tourner pour tout le monde pour recevoir le son et voir l'icône)
+	_process_voice_chat()
+
 	if _is_authority() and not is_dead and not NetworkHandler.is_werewolf(_my_id()):
 		_update_quest_arrow()
 	else:
@@ -374,7 +469,6 @@ func _process(delta: float) -> void:
 	if not _is_authority(): return
 	
 	# 4. Blocage Global (Vote / Intermission / Fin de jeu)
-	# Si le jeu est en pause, on fige le mouvement mais on garde l'animation Idle
 	if not NetworkHandler.is_gameplay_active:
 		velocity = Vector2.ZERO
 		rpc("_net_state", global_position, Vector2.ZERO, last_move_dir)
@@ -413,7 +507,7 @@ func _process(delta: float) -> void:
 	if is_doing_task:
 		anim.play("idle-down")
 		velocity = Vector2.ZERO
-		move_and_slide() # Important pour arrêter la glissade physique
+		move_and_slide() 
 		rpc("_net_state", global_position, Vector2.ZERO, last_move_dir)
 		_update_animation()
 		return
