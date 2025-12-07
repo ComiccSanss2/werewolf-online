@@ -1,18 +1,18 @@
 extends Control
 
-# UI References
+# Références aux nœuds de l'interface
 @onready var players_list := $CanvasLayer/PlayersList
 @onready var start_button: TextureButton = $CanvasLayer/ButtonStart
 @onready var color_picker_panel := $CanvasLayer/ColorPanel
 @onready var color_grid := $CanvasLayer/ColorPanel/GridContainer
 @onready var open_color_btn := $CanvasLayer/ColorButton
 @onready var menu_button := $CanvasLayer/MenuButton 
+@onready var ip_label := $CanvasLayer/IPLabel 
 
 # --- AUDIO ---
 @onready var sfx_player: AudioStreamPlayer = $SFX_Player
 var sound_click = preload("res://assets/sfx/clickbutton.wav")
 
-# Color Palette
 const COLORS_CHOICES = [
 	Color.RED, Color.BLUE, Color.GREEN, Color.YELLOW, Color.ORANGE,
 	Color.PURPLE, Color.CYAN, Color.MAGENTA, Color.PINK, Color.LIME_GREEN,
@@ -28,10 +28,22 @@ func _ready() -> void:
 	NetworkHandler.lobby_players_updated.connect(_update_list)
 	NetworkHandler.game_started.connect(_on_game_started)
 	
-	# --- ADDED: Listen for server disconnection (Host leaving) ---
-	# This signal is automatically emitted on clients when the server shuts down
+	# --- CONNEXION UPNP ---
+	if not NetworkHandler.upnp_completed.is_connected(_on_upnp_completed):
+		NetworkHandler.upnp_completed.connect(_on_upnp_completed)
+	
+	# Gestion initiale du Label IP
+	if ip_label:
+		if NetworkHandler.is_host:
+			if NetworkHandler.public_ip_address != "":
+				ip_label.text = "Public IP : " + NetworkHandler.public_ip_address
+			else:
+				ip_label.text = "Looking for IP..."
+		else:
+			ip_label.visible = false
+
+	# Connexion déconnexion serveur
 	get_tree().get_multiplayer().server_disconnected.connect(_on_server_disconnected)
-	# ------------------------------------------------------------
 	
 	if open_color_btn:
 		open_color_btn.pressed.connect(_on_open_color_picker)
@@ -47,20 +59,21 @@ func _ready() -> void:
 	
 	_update_list(NetworkHandler.players)
 
-# --- NEW FUNCTION: Handle forced disconnection ---
+# --- CALLBACK UPNP ---
+func _on_upnp_completed(ip_address: String):
+	if ip_label and NetworkHandler.is_host:
+		ip_label.text = "PUBLIC IP : " + ip_address
+
 func _on_server_disconnected():
-	# If the host leaves, clients are kicked back to the menu
 	print("Host disconnected, returning to main menu...")
 	_return_to_main_menu()
 
-# Audio Helper
 func _play_sound(stream: AudioStream):
 	if sfx_player:
 		sfx_player.stream = stream
 		sfx_player.pitch_scale = randf_range(0.9, 1.1)
 		sfx_player.play()
 
-# Color Buttons Generation
 func _generate_color_buttons():
 	if not color_grid: return
 	for child in color_grid.get_children(): child.queue_free()
@@ -89,7 +102,6 @@ func _on_color_chosen(color: Color):
 func update_player_color_rpc(new_color: Color):
 	var sender_id = multiplayer.get_remote_sender_id()
 	if sender_id == 0: sender_id = multiplayer.get_unique_id()
-	
 	if not NetworkHandler.players.has(sender_id): return
 	NetworkHandler.players[sender_id]["color"] = new_color
 	
@@ -110,24 +122,13 @@ func _on_StartButton_pressed() -> void:
 	if multiplayer.is_server():
 		NetworkHandler.start_game()
 
-# --- MODIFIED: Back to Menu Logic ---
-
 func _on_MenuButton_pressed() -> void:
-	# This is when YOU click the button (Host or Client)
 	_return_to_main_menu()
 
 func _return_to_main_menu() -> void:
-	# 1. Clean up network
 	NetworkHandler.stop_network()
-	
-	# 2. Small delay for sound/cleanup
 	await get_tree().create_timer(0.15).timeout
-	
-	# 3. Change scene
-	# Make sure the path matches your file EXACTLY (case sensitive!)
 	get_tree().change_scene_to_file("res://main_menu.tscn")
-
-# ------------------------------------
 
 func _on_game_started() -> void:
 	await get_tree().create_timer(0.15).timeout

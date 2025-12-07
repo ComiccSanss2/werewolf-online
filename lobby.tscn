@@ -1,4 +1,4 @@
-[gd_scene load_steps=28 format=3 uid="uid://sjbtxtro5v83"]
+[gd_scene load_steps=29 format=3 uid="uid://sjbtxtro5v83"]
 
 [ext_resource type="Script" uid="uid://dfiypymj4ct8q" path="res://lobby.gd" id="1_ll2xe"]
 [ext_resource type="Texture2D" uid="uid://cottpgqkao35a" path="res://assets/backgroundmenu.png" id="2_1gg6n"]
@@ -10,6 +10,10 @@
 [ext_resource type="Texture2D" uid="uid://bffr1yapttrf7" path="res://assets/MainMenuHover.png" id="8_gm5bj"]
 [ext_resource type="Texture2D" uid="uid://bsgllmjhwqfkk" path="res://assets/couleursbutton.png" id="9_gm5bj"]
 [ext_resource type="Texture2D" uid="uid://cs6k67k6biyvk" path="res://assets/ColorButtonHover.png" id="10_g30ku"]
+
+[sub_resource type="LabelSettings" id="LabelSettings_up7ya"]
+font = ExtResource("3_x4164")
+font_size = 25
 
 [sub_resource type="LabelSettings" id="LabelSettings_ein8w"]
 font = ExtResource("3_x4164")
@@ -96,6 +100,15 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="IPLabel" type="Label" parent="CanvasLayer"]
+layout_mode = 0
+offset_left = 99.0
+offset_top = 240.0
+offset_right = 153.0
+offset_bottom = 289.0
+text = "ip :"
+label_settings = SubResource("LabelSettings_up7ya")
 
 [node name="TitleLabel" type="Label" parent="CanvasLayer"]
 layout_mode = 1
